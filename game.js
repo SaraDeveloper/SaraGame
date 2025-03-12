@@ -79,9 +79,9 @@ function createClouds() {
 // Game objects
 const player = {
     x: 70,
-    y: canvas.height - 60,
-    width: 50,
-    height: 50,
+    y: canvas.height - 100,
+    width: 100,
+    height: 100,
     jumping: false,
     jumpHeight: 25,
     gravity: 0.6,
