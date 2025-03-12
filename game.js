@@ -9,24 +9,24 @@ const hardBtn = document.getElementById('hard-btn');
 // Difficulty settings
 const difficultySettings = {
     easy: {
-        obstacleSpeed: 3,
-        obstacleFrequency: 500,
+        obstacleSpeed: 5,
+        obstacleFrequency: 800,
         playerSpeed: 6,
-        jumpHeight: 20,
+        jumpHeight: 25,
         maxJumps: 2
     },
     medium: {
         obstacleSpeed: 5,
         obstacleFrequency: 400,
         playerSpeed: 5,
-        jumpHeight: 25,
+        jumpHeight: 30,
         maxJumps: 2
     },
     hard: {
         obstacleSpeed: 7,
         obstacleFrequency: 300,
         playerSpeed: 4,
-        jumpHeight: 30,
+        jumpHeight: 35,
         maxJumps: 1
     }
 };
@@ -146,13 +146,13 @@ const player = {
     height: 100,
     jumping: false,
     jumpHeight: 25,
-    gravity: 0.6,
+    gravity: 0.4,  // Reduced from 0.6 to make jumps longer
     velocity: 0,
     jumpCount: 0,
     maxJumps: 2,
-    speed: 5,  // Horizontal movement speed
-    facingLeft: false, // Track which direction player is facing
-    deathTimer: 0 // Add death timer
+    speed: 5,
+    facingLeft: false,
+    deathTimer: 0
 };
 
 // Add camera object
@@ -266,19 +266,7 @@ function gameLoop() {
             ctx.fillText(`Starting in: ${countdown}`, canvas.width / 2, canvas.height / 2 + 20);
         } else {
             // Regular game updates when not in countdown
-            if (isMovingLeft) {
-                player.x = Math.max(camera.x + 50, player.x - player.speed);
-            }
-            if (isMovingRight) {
-                player.x = Math.min(camera.x + canvas.width - player.width, player.x + player.speed);
-            }
-
-            // Auto-move the player when not explicitly moving
-            let isAutoMoving = false;
-            if (!isMovingLeft && !isMovingRight) {
-                player.x += player.speed * 0.5;
-                isAutoMoving = true;
-            }
+            // Removed left/right movement code
 
             // Update camera position
             const playerScreenX = player.x - camera.x;
@@ -319,7 +307,8 @@ function gameLoop() {
                     }
                     lastFrameUpdate = currentTime;
                 }
-            } else if (isMovingLeft || isMovingRight || isCameraMoving || isAutoMoving) {
+            } else {
+                // Always play walking animation when not jumping
                 if (currentTime - lastFrameUpdate > WALK_FRAME_INTERVAL) {
                     walkingFrame = (walkingFrame + 1) % 4;
                     lastFrameUpdate = currentTime;
@@ -328,7 +317,7 @@ function gameLoop() {
             
             if (isMovingLeft) {
                 player.facingLeft = true;
-            } else if (isMovingRight || isCameraMoving || isAutoMoving) {
+            } else if (isMovingRight || isCameraMoving) {
                 player.facingLeft = false;
             }
 
@@ -449,22 +438,12 @@ document.addEventListener('keydown', (event) => {
         }
         player.velocity = -player.jumpHeight;
         event.preventDefault();
-    } else if (event.code === 'ArrowLeft') {
-        isMovingLeft = true;
-        event.preventDefault();
-    } else if (event.code === 'ArrowRight') {
-        isMovingRight = true;
-        event.preventDefault();
     }
 });
 
 document.addEventListener('keyup', (event) => {
     if ((event.code === 'ArrowUp' || event.code === 'Space') && player.velocity < -8) {
         player.velocity = -8;
-    } else if (event.code === 'ArrowLeft') {
-        isMovingLeft = false;
-    } else if (event.code === 'ArrowRight') {
-        isMovingRight = false;
     }
 });
 
