@@ -171,6 +171,21 @@ let isMovingLeft = false;
 let isMovingRight = false;
 let animationFrameId = null;  // Add this line to track the animation frame
 
+// Add highest score variable and function to get it
+let highestScore = parseInt(localStorage.getItem('highestScore')) || 0;
+
+// Update highest score display in menu
+document.getElementById('highest-score').textContent = `Highest Score: ${highestScore}`;
+
+function updateHighestScore(currentScore) {
+    if (currentScore > highestScore) {
+        highestScore = currentScore;
+        localStorage.setItem('highestScore', highestScore);
+        // Update the display in menu
+        document.getElementById('highest-score').textContent = `Highest Score: ${highestScore}`;
+    }
+}
+
 // Initialize obstacles
 function createObstacle() {
     const settings = difficultySettings[currentDifficulty];
@@ -395,12 +410,22 @@ function gameLoop() {
             ctx.fillText(`Score: ${score}`, 15, 35);
             ctx.fillText(`Level: ${level}`, 15, 65);
             ctx.fillText(`Mode: ${currentDifficulty}`, 15, 95);
+
+            // Draw highest score at the bottom
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(5, canvas.height - 40, 200, 35);
+            ctx.fillStyle = 'black';
+            ctx.font = '20px Arial';
+            ctx.fillText(`Highest Score: ${highestScore}`, 15, canvas.height - 15);
         }
     } else {
         // Only show game over screen after 1 second
         const timeSinceDeath = Date.now() - player.deathTimer;
         
         if (timeSinceDeath >= 1000) {
+            // Update highest score when game is over
+            updateHighestScore(score);
+            
             // Game over screen
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -410,6 +435,7 @@ function gameLoop() {
             ctx.fillText('Game Over!', canvas.width / 2, canvas.height / 2);
             ctx.font = '24px Arial';
             ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 40);
+            ctx.fillText(`Highest Score: ${highestScore}`, canvas.width / 2, canvas.height / 2 + 80);
             
             restartBtn.style.display = 'block';
         }
