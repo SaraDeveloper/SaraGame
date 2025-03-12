@@ -2,6 +2,21 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const restartBtn = document.getElementById('restart-btn');
 
+// Load rabbit sprites
+const rabbitSprites = [];
+for (let i = 1; i <= 4; i++) {
+    const sprite = new Image();
+    sprite.src = `assets/rabbit_walking/${i}.png`;
+    sprite.onload = () => console.log(`Rabbit sprite ${i} loaded successfully`);
+    sprite.onerror = (e) => console.error(`Error loading rabbit sprite ${i}:`, e);
+    rabbitSprites.push(sprite);
+}
+
+// Animation frame counter
+let animationFrame = 0;
+let lastFrameUpdate = 0;
+const FRAME_INTERVAL = 100; // Change frame every 100ms
+
 // Load cloud background
 const cloudBackground = new Image();
 cloudBackground.onload = () => {
@@ -57,7 +72,8 @@ const player = {
     velocity: 0,
     jumpCount: 0,
     maxJumps: 2,
-    speed: 5  // Horizontal movement speed
+    speed: 5,  // Horizontal movement speed
+    facingLeft: false // Track which direction player is facing
 };
 
 // Add camera object
@@ -199,8 +215,43 @@ function gameLoop() {
         }
         
         // Draw player relative to camera
-        ctx.fillStyle = 'black';
-        ctx.fillRect(player.x - camera.x, player.y, player.width, player.height);
+        const currentTime = performance.now();
+        if (isMovingLeft || isMovingRight) {
+            // Update animation frame
+            if (currentTime - lastFrameUpdate > FRAME_INTERVAL) {
+                animationFrame = (animationFrame + 1) % 4;
+                lastFrameUpdate = currentTime;
+            }
+            // Update facing direction
+            player.facingLeft = isMovingLeft;
+        }
+
+        // Draw the rabbit sprite
+        if (rabbitSprites[animationFrame] && rabbitSprites[animationFrame].complete) {
+            ctx.save();
+            if (player.facingLeft) {
+                // Flip the sprite horizontally when facing left
+                ctx.scale(-1, 1);
+                ctx.drawImage(rabbitSprites[animationFrame], 
+                    -(player.x - camera.x + player.width), // Adjust x position when flipped
+                    player.y, 
+                    player.width, 
+                    player.height
+                );
+            } else {
+                ctx.drawImage(rabbitSprites[animationFrame], 
+                    player.x - camera.x, 
+                    player.y, 
+                    player.width, 
+                    player.height
+                );
+            }
+            ctx.restore();
+        } else {
+            // Fallback to rectangle if sprites aren't loaded
+            ctx.fillStyle = 'black';
+            ctx.fillRect(player.x - camera.x, player.y, player.width, player.height);
+        }
         
         // Clean up off-screen obstacles
         obstacles = obstacles.filter(obs => obs.x > camera.x - obs.width);
