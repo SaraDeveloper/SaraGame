@@ -38,7 +38,7 @@ function startGame(difficulty) {
     currentDifficulty = difficulty;
     menuContainer.style.display = 'none';
     canvas.style.display = 'block';
-    restartBtn.style.display = 'block';
+    restartBtn.style.display = 'none';
     
     // Apply difficulty settings
     const settings = difficultySettings[difficulty];
@@ -206,16 +206,9 @@ function gameLoop() {
             lastTimestamp = currentTime;
 
             clouds.forEach((cloud, index) => {
-                // Update cloud position independently of camera
-                cloud.x -= cloud.speed * deltaTime / 16; // Normalize to ~60fps
-
-                // Draw cloud with parallax effect
-                const screenX = cloud.x - camera.x * 0.2; // Small camera influence for depth
-                
-                // Draw the cloud
+                cloud.x -= cloud.speed * deltaTime / 16;
+                const screenX = cloud.x - camera.x * 0.2;
                 ctx.drawImage(cloudBackground, screenX, cloud.y, cloud.width, cloud.height);
-                
-                // If cloud moves off screen to the left, move it to the right
                 if (screenX + cloud.width < 0) {
                     cloud.x = camera.x + canvas.width + Math.random() * 200;
                 }
@@ -228,7 +221,6 @@ function gameLoop() {
             countdown = 3;
             countdownStart = Date.now();
             
-            // Increase obstacle speed with level
             const speedIncrease = currentDifficulty === 'easy' ? 0.3 : 
                                 currentDifficulty === 'medium' ? 0.5 : 0.7;
             obstacles.forEach(obs => obs.speed += speedIncrease);
@@ -242,7 +234,6 @@ function gameLoop() {
                 countdownStart = Date.now();
             }
             
-            // Draw countdown
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = 'white';
@@ -250,162 +241,138 @@ function gameLoop() {
             ctx.textAlign = 'center';
             ctx.fillText(`Level ${level}`, canvas.width / 2, canvas.height / 2 - 40);
             ctx.fillText(`Starting in: ${countdown}`, canvas.width / 2, canvas.height / 2 + 20);
-            
-            requestAnimationFrame(gameLoop);
-            return;
-        }
-
-        // Update player horizontal position relative to camera
-        if (isMovingLeft) {
-            player.x = Math.max(camera.x + 50, player.x - player.speed);
-        }
-        if (isMovingRight) {
-            player.x = Math.min(camera.x + canvas.width - player.width, player.x + player.speed);
-        }
-
-        // Auto-move the player when not explicitly moving
-        let isAutoMoving = false;
-        if (!isMovingLeft && !isMovingRight) {
-            player.x += player.speed * 0.5; // Automatic forward movement
-            isAutoMoving = true;
-        }
-
-        // Update camera position only when player reaches threshold
-        const playerScreenX = player.x - camera.x;
-        let isCameraMoving = false;
-        if (playerScreenX > canvas.width * camera.moveThreshold) {
-            const cameraMove = playerScreenX - (canvas.width * camera.moveThreshold);
-            camera.x += cameraMove;
-            isCameraMoving = true;
-        }
-        
-        // Update player vertical position (jumping)
-        if (player.jumping) {
-            player.velocity += player.gravity;
-            player.y += player.velocity;
-            
-            // Prevent player from going above the screen
-            if (player.y < 0) {
-                player.y = 0;
-                player.velocity = 0;
-            }
-            
-            // Check if player has landed
-            if (player.y > canvas.height - player.height) {
-                player.y = canvas.height - player.height;
-                player.jumping = false;
-                player.velocity = 0;
-                player.jumpCount = 0;
-            }
-        }
-        
-        // Draw player relative to camera
-        const currentTime = performance.now();
-        
-        // Update animation frames
-        if (player.jumping) {
-            // Update jumping animation
-            if (currentTime - lastFrameUpdate > JUMP_FRAME_INTERVAL) {
-                // Calculate jumping frame based on vertical velocity
-                if (player.velocity < 0) {
-                    // Going up - first half of frames
-                    jumpingFrame = Math.min(Math.floor((player.jumpHeight + player.velocity) / player.jumpHeight * 6), 5);
-                } else {
-                    // Going down - second half of frames
-                    jumpingFrame = Math.min(Math.floor(6 + (player.velocity / player.jumpHeight * 6)), 12);
-                }
-                lastFrameUpdate = currentTime;
-            }
-        } else if (isMovingLeft || isMovingRight || isCameraMoving || isAutoMoving) {
-            // Update walking animation when moving or when camera is moving
-            if (currentTime - lastFrameUpdate > WALK_FRAME_INTERVAL) {
-                walkingFrame = (walkingFrame + 1) % 4;
-                lastFrameUpdate = currentTime;
-            }
-        }
-        
-        // Update facing direction
-        if (isMovingLeft) {
-            player.facingLeft = true;
-        } else if (isMovingRight || isCameraMoving || isAutoMoving) {
-            player.facingLeft = false;
-        }
-
-        // Draw the rabbit sprite
-        const currentSprite = player.jumping ? 
-            rabbitSprites.jumping[jumpingFrame] : 
-            rabbitSprites.walking[walkingFrame];
-
-        if (currentSprite && currentSprite.complete) {
-            ctx.save();
-            if (player.facingLeft) {
-                // Flip the sprite horizontally when facing left
-                ctx.scale(-1, 1);
-                ctx.drawImage(currentSprite, 
-                    -(player.x - camera.x + player.width), // Adjust x position when flipped
-                    player.y, 
-                    player.width, 
-                    player.height
-                );
-            } else {
-                ctx.drawImage(currentSprite, 
-                    player.x - camera.x, 
-                    player.y, 
-                    player.width, 
-                    player.height
-                );
-            }
-            ctx.restore();
         } else {
-            // Fallback to rectangle if sprites aren't loaded
+            // Regular game updates when not in countdown
+            if (isMovingLeft) {
+                player.x = Math.max(camera.x + 50, player.x - player.speed);
+            }
+            if (isMovingRight) {
+                player.x = Math.min(camera.x + canvas.width - player.width, player.x + player.speed);
+            }
+
+            // Auto-move the player when not explicitly moving
+            let isAutoMoving = false;
+            if (!isMovingLeft && !isMovingRight) {
+                player.x += player.speed * 0.5;
+                isAutoMoving = true;
+            }
+
+            // Update camera position
+            const playerScreenX = player.x - camera.x;
+            let isCameraMoving = false;
+            if (playerScreenX > canvas.width * camera.moveThreshold) {
+                const cameraMove = playerScreenX - (canvas.width * camera.moveThreshold);
+                camera.x += cameraMove;
+                isCameraMoving = true;
+            }
+            
+            // Update player vertical position
+            if (player.jumping) {
+                player.velocity += player.gravity;
+                player.y += player.velocity;
+                
+                if (player.y < 0) {
+                    player.y = 0;
+                    player.velocity = 0;
+                }
+                
+                if (player.y > canvas.height - player.height) {
+                    player.y = canvas.height - player.height;
+                    player.jumping = false;
+                    player.velocity = 0;
+                    player.jumpCount = 0;
+                }
+            }
+
+            // Draw player
+            const currentTime = performance.now();
+            
+            if (player.jumping) {
+                if (currentTime - lastFrameUpdate > JUMP_FRAME_INTERVAL) {
+                    if (player.velocity < 0) {
+                        jumpingFrame = Math.min(Math.floor((player.jumpHeight + player.velocity) / player.jumpHeight * 6), 5);
+                    } else {
+                        jumpingFrame = Math.min(Math.floor(6 + (player.velocity / player.jumpHeight * 6)), 12);
+                    }
+                    lastFrameUpdate = currentTime;
+                }
+            } else if (isMovingLeft || isMovingRight || isCameraMoving || isAutoMoving) {
+                if (currentTime - lastFrameUpdate > WALK_FRAME_INTERVAL) {
+                    walkingFrame = (walkingFrame + 1) % 4;
+                    lastFrameUpdate = currentTime;
+                }
+            }
+            
+            if (isMovingLeft) {
+                player.facingLeft = true;
+            } else if (isMovingRight || isCameraMoving || isAutoMoving) {
+                player.facingLeft = false;
+            }
+
+            const currentSprite = player.jumping ? 
+                rabbitSprites.jumping[jumpingFrame] : 
+                rabbitSprites.walking[walkingFrame];
+
+            if (currentSprite && currentSprite.complete) {
+                ctx.save();
+                if (player.facingLeft) {
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(currentSprite, 
+                        -(player.x - camera.x + player.width),
+                        player.y, 
+                        player.width, 
+                        player.height
+                    );
+                } else {
+                    ctx.drawImage(currentSprite, 
+                        player.x - camera.x, 
+                        player.y, 
+                        player.width, 
+                        player.height
+                    );
+                }
+                ctx.restore();
+            } else {
+                ctx.fillStyle = 'black';
+                ctx.fillRect(player.x - camera.x, player.y, player.width, player.height);
+            }
+            
+            // Update and draw obstacles
+            obstacles = obstacles.filter(obs => obs.x > camera.x - obs.width);
+            
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obstacle = obstacles[i];
+                obstacle.x -= obstacle.speed;
+                
+                ctx.fillStyle = 'yellow';
+                ctx.fillRect(obstacle.x - camera.x, obstacle.y, obstacle.width, obstacle.height);
+                
+                if (checkCollision(player, obstacle)) {
+                    gameOver = true;
+                }
+                
+                if (!obstacle.passed && player.x > obstacle.x + obstacle.width) {
+                    obstacle.passed = true;
+                    score++;
+                }
+            }
+            
+            if (obstacles.length === 0 || 
+                obstacles[obstacles.length - 1].x < camera.x + canvas.width + 100) {
+                const newObstacles = createObstacle();
+                obstacles.push(...newObstacles);
+            }
+            
+            // Draw score and level
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(5, 5, 200, 100);
             ctx.fillStyle = 'black';
-            ctx.fillRect(player.x - camera.x, player.y, player.width, player.height);
+            ctx.font = '24px Arial bold';
+            ctx.textAlign = 'left';
+            ctx.fillText(`Score: ${score}`, 15, 35);
+            ctx.fillText(`Level: ${level}`, 15, 65);
+            ctx.fillText(`Mode: ${currentDifficulty}`, 15, 95);
         }
-        
-        // Clean up off-screen obstacles
-        obstacles = obstacles.filter(obs => obs.x > camera.x - obs.width);
-        
-        // Draw obstacles relative to camera and update their positions
-        for (let i = obstacles.length - 1; i >= 0; i--) {
-            const obstacle = obstacles[i];
-            
-            // Move obstacles based on their speed
-            obstacle.x -= obstacle.speed;
-            
-            // Draw obstacle relative to camera position
-            ctx.fillStyle = 'yellow';
-            ctx.fillRect(obstacle.x - camera.x, obstacle.y, obstacle.width, obstacle.height);
-            
-            // Check collision using actual positions
-            if (checkCollision(player, obstacle)) {
-                gameOver = true;
-            }
-            
-            // Check if player has passed the obstacle
-            if (!obstacle.passed && player.x > obstacle.x + obstacle.width) {
-                obstacle.passed = true;
-                score++;
-            }
-        }
-        
-        // Add new obstacles
-        if (obstacles.length === 0 || 
-            obstacles[obstacles.length - 1].x < camera.x + canvas.width + 100) {
-            const newObstacles = createObstacle();
-            obstacles.push(...newObstacles);
-        }
-        
-        // Draw score and level (fixed to screen)
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-        ctx.fillRect(5, 5, 200, 100);
-        ctx.fillStyle = 'black';
-        ctx.font = '24px Arial bold';
-        ctx.textAlign = 'left';
-        ctx.fillText(`Score: ${score}`, 15, 35);
-        ctx.fillText(`Level: ${level}`, 15, 65);
-        ctx.fillText(`Mode: ${currentDifficulty}`, 15, 95);
-        
-        requestAnimationFrame(gameLoop);
     } else {
         // Game over screen
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
@@ -415,10 +382,11 @@ function gameLoop() {
         ctx.textAlign = 'center';
         ctx.fillText('Game Over!', canvas.width / 2, canvas.height / 2);
         ctx.font = '24px Arial';
-        ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 40);
-        ctx.fillText(`Level: ${level}`, canvas.width / 2, canvas.height / 2 + 70);
-        ctx.fillText(`Mode: ${currentDifficulty}`, canvas.width / 2, canvas.height / 2 + 100);
+        ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 40);
+        
+        restartBtn.style.display = 'block';
     }
+    requestAnimationFrame(gameLoop);
 }
 
 // Collision detection
