@@ -168,6 +168,7 @@ let countdown = 0;
 let countdownStart = 0;
 let isMovingLeft = false;
 let isMovingRight = false;
+let animationFrameId = null;  // Add this line to track the animation frame
 
 // Initialize obstacles
 function createObstacle() {
@@ -417,7 +418,7 @@ function gameLoop() {
         
         restartBtn.style.display = 'block';
     }
-    requestAnimationFrame(gameLoop);
+    animationFrameId = requestAnimationFrame(gameLoop);  // Store the animation frame ID
 }
 
 // Collision detection
@@ -468,6 +469,12 @@ function restartGame() {
         return;
     }
 
+    // Cancel any existing animation frame
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    }
+
     const settings = difficultySettings[currentDifficulty];
     camera.x = 0;
     player.x = 70;
@@ -486,6 +493,7 @@ function restartGame() {
     isMovingLeft = false;
     isMovingRight = false;
     createClouds(); // Reset cloud positions
+    restartBtn.style.display = 'none'; // Hide the restart button
     gameLoop();
 }
 
