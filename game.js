@@ -11,7 +11,9 @@ const player = {
     jumping: false,
     jumpHeight: 25,
     gravity: 0.6,
-    velocity: 0
+    velocity: 0,
+    jumpCount: 0,
+    maxJumps: 2  // Maximum number of jumps allowed
 };
 
 let obstacles = [];
@@ -94,6 +96,7 @@ function gameLoop() {
                 player.y = canvas.height - player.height;
                 player.jumping = false;
                 player.velocity = 0;
+                player.jumpCount = 0;  // Reset jump count when landing
             }
         }
         
@@ -163,8 +166,13 @@ function checkCollision(rect1, rect2) {
 
 // Handle keyboard input
 document.addEventListener('keydown', (event) => {
-    if ((event.code === 'ArrowUp' || event.code === 'Space') && !player.jumping) {
-        player.jumping = true;
+    if ((event.code === 'ArrowUp' || event.code === 'Space') && player.jumpCount < player.maxJumps) {
+        if (!player.jumping) {
+            player.jumping = true;
+            player.jumpCount = 1;
+        } else {
+            player.jumpCount++;
+        }
         player.velocity = -player.jumpHeight;
         event.preventDefault(); // Prevent page scrolling
     }
@@ -182,6 +190,7 @@ function restartGame() {
     player.y = canvas.height - player.height;
     player.jumping = false;
     player.velocity = 0;
+    player.jumpCount = 0;  // Reset jump count
     obstacles = [];
     gameOver = false;
     score = 0;
