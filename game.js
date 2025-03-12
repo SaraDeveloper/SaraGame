@@ -17,6 +17,12 @@ const player = {
     speed: 5  // Horizontal movement speed
 };
 
+// Add camera object
+const camera = {
+    x: 0,
+    moveThreshold: 0.7 // When player reaches 70% of screen width, camera starts moving
+};
+
 let obstacles = [];
 let gameOver = false;
 let score = 0;
@@ -37,7 +43,7 @@ function createObstacle() {
     const numObstacles = Math.random() < 0.3 ? 2 : 1;
     const newObstacles = [];
     
-    let startX = canvas.width - 100; // Position obstacles towards the right
+    let startX = camera.x + canvas.width + 100; // Position obstacles ahead of the camera view
     if (lastObstacle) {
         startX = lastObstacle.x + randomGap;
     }
@@ -65,8 +71,6 @@ function gameLoop() {
             level++;
             countdown = 3;
             countdownStart = Date.now();
-            // Reset player position for new level
-            player.x = 70;
         }
         
         // Show countdown if active
@@ -89,13 +93,19 @@ function gameLoop() {
             requestAnimationFrame(gameLoop);
             return;
         }
-        
-        // Update player horizontal position
-        if (isMovingLeft && player.x > 0) {
-            player.x -= player.speed;
+
+        // Update player horizontal position relative to camera
+        if (isMovingLeft) {
+            player.x = Math.max(camera.x + 50, player.x - player.speed);
         }
-        if (isMovingRight && player.x < canvas.width - player.width) {
-            player.x += player.speed;
+        if (isMovingRight) {
+            player.x = Math.min(camera.x + canvas.width - player.width, player.x + player.speed);
+        }
+
+        // Update camera position only when player reaches threshold
+        const playerScreenX = player.x - camera.x;
+        if (playerScreenX > canvas.width * camera.moveThreshold) {
+            camera.x += playerScreenX - (canvas.width * camera.moveThreshold);
         }
         
         // Update player vertical position (jumping)
@@ -112,19 +122,22 @@ function gameLoop() {
             }
         }
         
-        // Draw player
+        // Draw player relative to camera
         ctx.fillStyle = 'black';
-        ctx.fillRect(player.x, player.y, player.width, player.height);
+        ctx.fillRect(player.x - camera.x, player.y, player.width, player.height);
         
-        // Draw obstacles (now stationary)
+        // Clean up off-screen obstacles
+        obstacles = obstacles.filter(obs => obs.x > camera.x - obs.width);
+        
+        // Draw obstacles relative to camera
         for (let i = obstacles.length - 1; i >= 0; i--) {
             const obstacle = obstacles[i];
             
-            // Draw obstacle
+            // Draw obstacle relative to camera position
             ctx.fillStyle = 'yellow';
-            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            ctx.fillRect(obstacle.x - camera.x, obstacle.y, obstacle.width, obstacle.height);
             
-            // Check collision
+            // Check collision using actual positions
             if (checkCollision(player, obstacle)) {
                 gameOver = true;
             }
@@ -138,12 +151,12 @@ function gameLoop() {
         
         // Add new obstacles
         if (obstacles.length === 0 || 
-            obstacles[obstacles.length - 1].x < canvas.width - 300) {
+            obstacles[obstacles.length - 1].x < camera.x + canvas.width + 100) {
             const newObstacles = createObstacle();
             obstacles.push(...newObstacles);
         }
         
-        // Draw score and level
+        // Draw score and level (fixed to screen)
         ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
         ctx.fillRect(5, 5, 200, 70);
         ctx.fillStyle = 'black';
@@ -205,8 +218,9 @@ document.addEventListener('keyup', (event) => {
     }
 });
 
-// Restart game
+// Modify restartGame to reset camera
 function restartGame() {
+    camera.x = 0;
     player.x = 70;
     player.y = canvas.height - player.height;
     player.jumping = false;
