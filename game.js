@@ -17,16 +17,37 @@ const player = {
 let obstacles = [];
 let gameOver = false;
 let score = 0;
+let level = 1;
+let countdown = 0;
+let countdownStart = 0;
 const obstacleSpeed = 5;
 
-// Initialize first obstacle
+// Initialize obstacles
 function createObstacle() {
-    return {
-        x: canvas.width,
-        y: canvas.height - 30,
-        width: 30,
-        height: 30
-    };
+    const minGap = 200;
+    const maxGap = 400;
+    const lastObstacle = obstacles[obstacles.length - 1];
+    const randomGap = Math.random() * (maxGap - minGap) + minGap;
+    
+    // Randomly decide if we want to create multiple obstacles
+    const numObstacles = Math.random() < 0.3 ? 2 : 1;
+    const newObstacles = [];
+    
+    let startX = canvas.width;
+    if (lastObstacle) {
+        startX = lastObstacle.x + randomGap;
+    }
+    
+    for (let i = 0; i < numObstacles; i++) {
+        newObstacles.push({
+            x: startX + (i * 60), // 60px gap between consecutive obstacles
+            y: canvas.height - 30,
+            width: 30,
+            height: 30
+        });
+    }
+    
+    return newObstacles;
 }
 
 // Game loop
@@ -34,6 +55,34 @@ function gameLoop() {
     if (!gameOver) {
         // Clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Handle level transition
+        if (score >= level * 20 && countdown === 0) {
+            level++;
+            countdown = 3;
+            countdownStart = Date.now();
+        }
+        
+        // Show countdown if active
+        if (countdown > 0) {
+            const elapsed = (Date.now() - countdownStart) / 1000;
+            if (elapsed >= 1) {
+                countdown--;
+                countdownStart = Date.now();
+            }
+            
+            // Draw countdown
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.font = '48px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Level ${level}`, canvas.width / 2, canvas.height / 2 - 40);
+            ctx.fillText(`Starting in: ${countdown}`, canvas.width / 2, canvas.height / 2 + 20);
+            
+            requestAnimationFrame(gameLoop);
+            return;
+        }
         
         // Update player
         if (player.jumping) {
@@ -75,17 +124,19 @@ function gameLoop() {
         
         // Add new obstacles
         if (obstacles.length === 0 || 
-            obstacles[obstacles.length - 1].x < canvas.width - 300) {
-            obstacles.push(createObstacle());
+            obstacles[obstacles.length - 1].x < canvas.width - 200) {
+            const newObstacles = createObstacle();
+            obstacles.push(...newObstacles);
         }
         
-        // Draw score
+        // Draw score and level
         ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-        ctx.fillRect(5, 5, 150, 40);
+        ctx.fillRect(5, 5, 200, 70);
         ctx.fillStyle = 'black';
-        ctx.font = '30px Arial bold';
+        ctx.font = '24px Arial bold';
         ctx.textAlign = 'left';
         ctx.fillText(`Score: ${score}`, 15, 35);
+        ctx.fillText(`Level: ${level}`, 15, 65);
         
         requestAnimationFrame(gameLoop);
     } else {
@@ -98,6 +149,7 @@ function gameLoop() {
         ctx.fillText('Game Over!', canvas.width / 2, canvas.height / 2);
         ctx.font = '24px Arial';
         ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 40);
+        ctx.fillText(`Level: ${level}`, canvas.width / 2, canvas.height / 2 + 70);
     }
 }
 
@@ -125,6 +177,8 @@ function restartGame() {
     obstacles = [];
     gameOver = false;
     score = 0;
+    level = 1;
+    countdown = 0;
     gameLoop();
 }
 
