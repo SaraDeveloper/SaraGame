@@ -16,26 +16,33 @@ cloudBackground.src = 'assets/cloud.webp';
 
 // Cloud array to store cloud positions
 let clouds = [];
+let lastTimestamp = 0;
 
 // Function to create clouds
 function createClouds() {
     clouds = [];
     // Create 5 clouds at random positions
     for (let i = 0; i < 5; i++) {
-        const width = Math.random() * (400 - 200) + 200; // Random width between 200 and 800
+        const width = Math.random() * (400 - 200) + 200; // Random width between 200 and 400
         const height = width * 0.6; // Maintain aspect ratio
         
         // Calculate y position ensuring bottom of cloud is above screen height/2
         const maxY = (canvas.height / 2) - height; // Maximum y position to keep bottom above middle
         const y = Math.random() * maxY; // Random y between 0 and maxY
         
+        // Calculate speed based on size - smaller clouds move faster
+        const speedFactor = 1 - ((width - 200) / 200); // Will be 1 for smallest clouds, 0 for largest
+        const baseSpeed = 0.5 + (speedFactor * 1); // Base speed between 0.5 and 1.5 pixels per frame
+        
         clouds.push({
             x: Math.random() * canvas.width * 2,
             y: y,
             width: width,
-            height: height
+            height: height,
+            speed: baseSpeed
         });
     }
+    lastTimestamp = performance.now();
 }
 
 // Game objects
@@ -108,9 +115,16 @@ function gameLoop() {
         
         // Draw clouds
         if (cloudBackground.complete) {
+            const currentTime = performance.now();
+            const deltaTime = currentTime - lastTimestamp;
+            lastTimestamp = currentTime;
+
             clouds.forEach((cloud, index) => {
+                // Update cloud position independently of camera
+                cloud.x -= cloud.speed * deltaTime / 16; // Normalize to ~60fps
+
                 // Draw cloud with parallax effect
-                const screenX = cloud.x - camera.x * 0.5; // Clouds move at half speed of camera
+                const screenX = cloud.x - camera.x * 0.2; // Small camera influence for depth
                 
                 // Draw the cloud
                 ctx.drawImage(cloudBackground, screenX, cloud.y, cloud.width, cloud.height);
