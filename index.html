@@ -21,6 +21,7 @@
             background-color: #87CEEB;  /* Sky blue color */
             width: 1000px;
             height: 500px;
+            display: none; /* Hide canvas initially */
         }
         #restart-btn {
             margin-top: 20px;
@@ -31,13 +32,55 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            display: none; /* Hide restart button initially */
         }
         #restart-btn:hover {
             background-color: #45a049;
         }
+        #menu-container {
+            text-align: center;
+            padding: 20px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .difficulty-btn {
+            margin: 10px;
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .difficulty-btn:hover {
+            transform: scale(1.05);
+        }
+        #easy-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        #medium-btn {
+            background-color: #FFA500;
+            color: white;
+        }
+        #hard-btn {
+            background-color: #FF4444;
+            color: white;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
     </style>
 </head>
 <body>
+    <div id="menu-container">
+        <h1>Choose Difficulty</h1>
+        <button id="easy-btn" class="difficulty-btn">Easy</button>
+        <button id="medium-btn" class="difficulty-btn">Medium</button>
+        <button id="hard-btn" class="difficulty-btn">Hard</button>
+    </div>
     <canvas id="gameCanvas" width="1000" height="500"></canvas>
     <button id="restart-btn">Restart Game</button>
     <script src="game.js"></script>

@@ -1,6 +1,58 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const restartBtn = document.getElementById('restart-btn');
+const menuContainer = document.getElementById('menu-container');
+const easyBtn = document.getElementById('easy-btn');
+const mediumBtn = document.getElementById('medium-btn');
+const hardBtn = document.getElementById('hard-btn');
+
+// Difficulty settings
+const difficultySettings = {
+    easy: {
+        obstacleSpeed: 3,
+        obstacleFrequency: 500,
+        playerSpeed: 6,
+        jumpHeight: 20,
+        maxJumps: 2
+    },
+    medium: {
+        obstacleSpeed: 5,
+        obstacleFrequency: 400,
+        playerSpeed: 5,
+        jumpHeight: 25,
+        maxJumps: 2
+    },
+    hard: {
+        obstacleSpeed: 7,
+        obstacleFrequency: 300,
+        playerSpeed: 4,
+        jumpHeight: 30,
+        maxJumps: 1
+    }
+};
+
+let currentDifficulty = null;
+
+// Handle difficulty selection
+function startGame(difficulty) {
+    currentDifficulty = difficulty;
+    menuContainer.style.display = 'none';
+    canvas.style.display = 'block';
+    restartBtn.style.display = 'block';
+    
+    // Apply difficulty settings
+    const settings = difficultySettings[difficulty];
+    player.speed = settings.playerSpeed;
+    player.jumpHeight = settings.jumpHeight;
+    player.maxJumps = settings.maxJumps;
+    
+    // Start the game
+    restartGame();
+}
+
+easyBtn.addEventListener('click', () => startGame('easy'));
+mediumBtn.addEventListener('click', () => startGame('medium'));
+hardBtn.addEventListener('click', () => startGame('hard'));
 
 // Load rabbit sprites
 const rabbitSprites = {
@@ -109,13 +161,14 @@ let isMovingRight = false;
 
 // Initialize obstacles
 function createObstacle() {
-    const minGap = 250;
-    const maxGap = 500;
+    const settings = difficultySettings[currentDifficulty];
+    const minGap = settings.obstacleFrequency - 100;
+    const maxGap = settings.obstacleFrequency + 100;
     const lastObstacle = obstacles[obstacles.length - 1];
     const randomGap = Math.random() * (maxGap - minGap) + minGap;
     
     // Randomly decide if we want to create multiple obstacles
-    const numObstacles = Math.random() < 0.3 ? 2 : 1;
+    const numObstacles = Math.random() < (currentDifficulty === 'hard' ? 0.4 : 0.3) ? 2 : 1;
     const newObstacles = [];
     
     let startX = camera.x + canvas.width + 100; // Position obstacles ahead of the camera view
@@ -128,7 +181,8 @@ function createObstacle() {
             x: startX + (i * 80),
             y: canvas.height - 40,
             width: 40,
-            height: 40
+            height: 40,
+            speed: settings.obstacleSpeed
         });
     }
     
@@ -169,10 +223,15 @@ function gameLoop() {
         }
         
         // Handle level transition
-        if (score >= level * 20 && countdown === 0) {
+        if (score >= level * (currentDifficulty === 'easy' ? 15 : currentDifficulty === 'medium' ? 20 : 25) && countdown === 0) {
             level++;
             countdown = 3;
             countdownStart = Date.now();
+            
+            // Increase obstacle speed with level
+            const speedIncrease = currentDifficulty === 'easy' ? 0.3 : 
+                                currentDifficulty === 'medium' ? 0.5 : 0.7;
+            obstacles.forEach(obs => obs.speed += speedIncrease);
         }
         
         // Show countdown if active
@@ -204,10 +263,20 @@ function gameLoop() {
             player.x = Math.min(camera.x + canvas.width - player.width, player.x + player.speed);
         }
 
+        // Auto-move the player when not explicitly moving
+        let isAutoMoving = false;
+        if (!isMovingLeft && !isMovingRight) {
+            player.x += player.speed * 0.5; // Automatic forward movement
+            isAutoMoving = true;
+        }
+
         // Update camera position only when player reaches threshold
         const playerScreenX = player.x - camera.x;
+        let isCameraMoving = false;
         if (playerScreenX > canvas.width * camera.moveThreshold) {
-            camera.x += playerScreenX - (canvas.width * camera.moveThreshold);
+            const cameraMove = playerScreenX - (canvas.width * camera.moveThreshold);
+            camera.x += cameraMove;
+            isCameraMoving = true;
         }
         
         // Update player vertical position (jumping)
@@ -247,8 +316,8 @@ function gameLoop() {
                 }
                 lastFrameUpdate = currentTime;
             }
-        } else if (isMovingLeft || isMovingRight) {
-            // Update walking animation
+        } else if (isMovingLeft || isMovingRight || isCameraMoving || isAutoMoving) {
+            // Update walking animation when moving or when camera is moving
             if (currentTime - lastFrameUpdate > WALK_FRAME_INTERVAL) {
                 walkingFrame = (walkingFrame + 1) % 4;
                 lastFrameUpdate = currentTime;
@@ -256,8 +325,10 @@ function gameLoop() {
         }
         
         // Update facing direction
-        if (isMovingLeft || isMovingRight) {
-            player.facingLeft = isMovingLeft;
+        if (isMovingLeft) {
+            player.facingLeft = true;
+        } else if (isMovingRight || isCameraMoving || isAutoMoving) {
+            player.facingLeft = false;
         }
 
         // Draw the rabbit sprite
@@ -294,9 +365,12 @@ function gameLoop() {
         // Clean up off-screen obstacles
         obstacles = obstacles.filter(obs => obs.x > camera.x - obs.width);
         
-        // Draw obstacles relative to camera
+        // Draw obstacles relative to camera and update their positions
         for (let i = obstacles.length - 1; i >= 0; i--) {
             const obstacle = obstacles[i];
+            
+            // Move obstacles based on their speed
+            obstacle.x -= obstacle.speed;
             
             // Draw obstacle relative to camera position
             ctx.fillStyle = 'yellow';
@@ -323,12 +397,13 @@ function gameLoop() {
         
         // Draw score and level (fixed to screen)
         ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-        ctx.fillRect(5, 5, 200, 70);
+        ctx.fillRect(5, 5, 200, 100);
         ctx.fillStyle = 'black';
         ctx.font = '24px Arial bold';
         ctx.textAlign = 'left';
         ctx.fillText(`Score: ${score}`, 15, 35);
         ctx.fillText(`Level: ${level}`, 15, 65);
+        ctx.fillText(`Mode: ${currentDifficulty}`, 15, 95);
         
         requestAnimationFrame(gameLoop);
     } else {
@@ -342,6 +417,7 @@ function gameLoop() {
         ctx.font = '24px Arial';
         ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 40);
         ctx.fillText(`Level: ${level}`, canvas.width / 2, canvas.height / 2 + 70);
+        ctx.fillText(`Mode: ${currentDifficulty}`, canvas.width / 2, canvas.height / 2 + 100);
     }
 }
 
@@ -385,12 +461,24 @@ document.addEventListener('keyup', (event) => {
 
 // Modify restartGame to reset camera
 function restartGame() {
+    if (!currentDifficulty) {
+        // If no difficulty selected, show menu
+        menuContainer.style.display = 'block';
+        canvas.style.display = 'none';
+        restartBtn.style.display = 'none';
+        return;
+    }
+
+    const settings = difficultySettings[currentDifficulty];
     camera.x = 0;
     player.x = 70;
     player.y = canvas.height - player.height;
     player.jumping = false;
     player.velocity = 0;
     player.jumpCount = 0;
+    player.speed = settings.playerSpeed;
+    player.jumpHeight = settings.jumpHeight;
+    player.maxJumps = settings.maxJumps;
     obstacles = [];
     gameOver = false;
     score = 0;
