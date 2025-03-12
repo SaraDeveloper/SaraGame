@@ -80,9 +80,12 @@ function gameLoop() {
         }
         
         // Draw score
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(5, 5, 150, 40);
         ctx.fillStyle = 'black';
-        ctx.font = '20px Arial';
-        ctx.fillText(`Score: ${score}`, 10, 30);
+        ctx.font = '30px Arial bold';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Score: ${score}`, 15, 35);
         
         requestAnimationFrame(gameLoop);
     } else {
