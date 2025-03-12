@@ -97,6 +97,16 @@ cloudBackground.onerror = (e) => {
 };
 cloudBackground.src = 'assets/cloud.webp';
 
+// Load cactus image
+const cactusImage = new Image();
+cactusImage.onload = () => {
+    console.log('Cactus image loaded successfully');
+};
+cactusImage.onerror = (e) => {
+    console.error('Error loading cactus image:', e);
+};
+cactusImage.src = 'assets/cactus.png';
+
 // Cloud array to store cloud positions
 let clouds = [];
 let lastTimestamp = 0;
@@ -177,11 +187,22 @@ function createObstacle() {
     }
     
     for (let i = 0; i < numObstacles; i++) {
+        // Random size calculation with larger ranges
+        const minHeight = 80;  // Increased minimum height
+        const maxHeight = 150; // Increased maximum height
+        const height = Math.random() * (maxHeight - minHeight) + minHeight;
+        
+        // More varied width calculation
+        const minWidthRatio = 0.4;  // Width will be at least 40% of height
+        const maxWidthRatio = 0.8;  // Width can be up to 80% of height
+        const widthRatio = Math.random() * (maxWidthRatio - minWidthRatio) + minWidthRatio;
+        const width = height * widthRatio;
+        
         newObstacles.push({
-            x: startX + (i * 80),
-            y: canvas.height - 40,
-            width: 40,
-            height: 40,
+            x: startX + (i * (width + 60)), // Increased spacing between obstacles
+            y: canvas.height - height,
+            width: width,
+            height: height,
             speed: settings.obstacleSpeed
         });
     }
@@ -344,8 +365,18 @@ function gameLoop() {
                 const obstacle = obstacles[i];
                 obstacle.x -= obstacle.speed;
                 
-                ctx.fillStyle = 'yellow';
-                ctx.fillRect(obstacle.x - camera.x, obstacle.y, obstacle.width, obstacle.height);
+                if (cactusImage.complete) {
+                    ctx.drawImage(cactusImage, 
+                        obstacle.x - camera.x, 
+                        obstacle.y, 
+                        obstacle.width, 
+                        obstacle.height
+                    );
+                } else {
+                    // Fallback if image hasn't loaded
+                    ctx.fillStyle = 'green';
+                    ctx.fillRect(obstacle.x - camera.x, obstacle.y, obstacle.width, obstacle.height);
+                }
                 
                 if (checkCollision(player, obstacle)) {
                     gameOver = true;
