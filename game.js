@@ -169,6 +169,12 @@ function gameLoop() {
             player.velocity += player.gravity;
             player.y += player.velocity;
             
+            // Prevent player from going above the screen
+            if (player.y < 0) {
+                player.y = 0;
+                player.velocity = 0;
+            }
+            
             // Check if player has landed
             if (player.y > canvas.height - player.height) {
                 player.y = canvas.height - player.height;
