@@ -151,7 +151,8 @@ const player = {
     jumpCount: 0,
     maxJumps: 2,
     speed: 5,  // Horizontal movement speed
-    facingLeft: false // Track which direction player is facing
+    facingLeft: false, // Track which direction player is facing
+    deathTimer: 0 // Add death timer
 };
 
 // Add camera object
@@ -380,6 +381,7 @@ function gameLoop() {
                 }
                 
                 if (checkCollision(player, obstacle)) {
+                    player.deathTimer = Date.now();
                     gameOver = true;
                 }
                 
@@ -406,19 +408,24 @@ function gameLoop() {
             ctx.fillText(`Mode: ${currentDifficulty}`, 15, 95);
         }
     } else {
-        // Game over screen
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = 'white';
-        ctx.font = '48px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('Game Over!', canvas.width / 2, canvas.height / 2);
-        ctx.font = '24px Arial';
-        ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 40);
+        // Only show game over screen after 1 second
+        const timeSinceDeath = Date.now() - player.deathTimer;
         
-        restartBtn.style.display = 'block';
+        if (timeSinceDeath >= 1000) {
+            // Game over screen
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.font = '48px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Game Over!', canvas.width / 2, canvas.height / 2);
+            ctx.font = '24px Arial';
+            ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 40);
+            
+            restartBtn.style.display = 'block';
+        }
     }
-    animationFrameId = requestAnimationFrame(gameLoop);  // Store the animation frame ID
+    animationFrameId = requestAnimationFrame(gameLoop);
 }
 
 // Collision detection
