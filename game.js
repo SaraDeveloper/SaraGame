@@ -13,7 +13,8 @@ const player = {
     gravity: 0.6,
     velocity: 0,
     jumpCount: 0,
-    maxJumps: 2  // Maximum number of jumps allowed
+    maxJumps: 2,
+    speed: 5  // Horizontal movement speed
 };
 
 let obstacles = [];
@@ -22,7 +23,8 @@ let score = 0;
 let level = 1;
 let countdown = 0;
 let countdownStart = 0;
-const obstacleSpeed = 6;
+let isMovingLeft = false;
+let isMovingRight = false;
 
 // Initialize obstacles
 function createObstacle() {
@@ -35,7 +37,7 @@ function createObstacle() {
     const numObstacles = Math.random() < 0.3 ? 2 : 1;
     const newObstacles = [];
     
-    let startX = canvas.width;
+    let startX = canvas.width - 100; // Position obstacles towards the right
     if (lastObstacle) {
         startX = lastObstacle.x + randomGap;
     }
@@ -63,6 +65,8 @@ function gameLoop() {
             level++;
             countdown = 3;
             countdownStart = Date.now();
+            // Reset player position for new level
+            player.x = 70;
         }
         
         // Show countdown if active
@@ -86,7 +90,15 @@ function gameLoop() {
             return;
         }
         
-        // Update player
+        // Update player horizontal position
+        if (isMovingLeft && player.x > 0) {
+            player.x -= player.speed;
+        }
+        if (isMovingRight && player.x < canvas.width - player.width) {
+            player.x += player.speed;
+        }
+        
+        // Update player vertical position (jumping)
         if (player.jumping) {
             player.velocity += player.gravity;
             player.y += player.velocity;
@@ -96,7 +108,7 @@ function gameLoop() {
                 player.y = canvas.height - player.height;
                 player.jumping = false;
                 player.velocity = 0;
-                player.jumpCount = 0;  // Reset jump count when landing
+                player.jumpCount = 0;
             }
         }
         
@@ -104,10 +116,9 @@ function gameLoop() {
         ctx.fillStyle = 'black';
         ctx.fillRect(player.x, player.y, player.width, player.height);
         
-        // Update and draw obstacles
+        // Draw obstacles (now stationary)
         for (let i = obstacles.length - 1; i >= 0; i--) {
             const obstacle = obstacles[i];
-            obstacle.x -= obstacleSpeed;
             
             // Draw obstacle
             ctx.fillStyle = 'yellow';
@@ -118,16 +129,16 @@ function gameLoop() {
                 gameOver = true;
             }
             
-            // Remove obstacles that are off screen
-            if (obstacle.x + obstacle.width < 0) {
-                obstacles.splice(i, 1);
+            // Check if player has passed the obstacle
+            if (!obstacle.passed && player.x > obstacle.x + obstacle.width) {
+                obstacle.passed = true;
                 score++;
             }
         }
         
         // Add new obstacles
         if (obstacles.length === 0 || 
-            obstacles[obstacles.length - 1].x < canvas.width - 200) {
+            obstacles[obstacles.length - 1].x < canvas.width - 300) {
             const newObstacles = createObstacle();
             obstacles.push(...newObstacles);
         }
@@ -174,28 +185,40 @@ document.addEventListener('keydown', (event) => {
             player.jumpCount++;
         }
         player.velocity = -player.jumpHeight;
-        event.preventDefault(); // Prevent page scrolling
+        event.preventDefault();
+    } else if (event.code === 'ArrowLeft') {
+        isMovingLeft = true;
+        event.preventDefault();
+    } else if (event.code === 'ArrowRight') {
+        isMovingRight = true;
+        event.preventDefault();
     }
 });
 
-// Add keyup event listener to allow for variable jump height
 document.addEventListener('keyup', (event) => {
     if ((event.code === 'ArrowUp' || event.code === 'Space') && player.velocity < -8) {
-        player.velocity = -8; // Cut the jump short if key is released early
+        player.velocity = -8;
+    } else if (event.code === 'ArrowLeft') {
+        isMovingLeft = false;
+    } else if (event.code === 'ArrowRight') {
+        isMovingRight = false;
     }
 });
 
 // Restart game
 function restartGame() {
+    player.x = 70;
     player.y = canvas.height - player.height;
     player.jumping = false;
     player.velocity = 0;
-    player.jumpCount = 0;  // Reset jump count
+    player.jumpCount = 0;
     obstacles = [];
     gameOver = false;
     score = 0;
     level = 1;
     countdown = 0;
+    isMovingLeft = false;
+    isMovingRight = false;
     gameLoop();
 }
 
