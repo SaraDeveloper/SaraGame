@@ -4,10 +4,10 @@ const restartBtn = document.getElementById('restart-btn');
 
 // Game objects
 const player = {
-    x: 50,
-    y: canvas.height - 50,
-    width: 40,
-    height: 40,
+    x: 70,
+    y: canvas.height - 60,
+    width: 50,
+    height: 50,
     jumping: false,
     jumpHeight: 25,
     gravity: 0.6,
@@ -20,12 +20,12 @@ let score = 0;
 let level = 1;
 let countdown = 0;
 let countdownStart = 0;
-const obstacleSpeed = 5;
+const obstacleSpeed = 6;
 
 // Initialize obstacles
 function createObstacle() {
-    const minGap = 200;
-    const maxGap = 400;
+    const minGap = 250;
+    const maxGap = 500;
     const lastObstacle = obstacles[obstacles.length - 1];
     const randomGap = Math.random() * (maxGap - minGap) + minGap;
     
@@ -40,10 +40,10 @@ function createObstacle() {
     
     for (let i = 0; i < numObstacles; i++) {
         newObstacles.push({
-            x: startX + (i * 60), // 60px gap between consecutive obstacles
-            y: canvas.height - 30,
-            width: 30,
-            height: 30
+            x: startX + (i * 80),
+            y: canvas.height - 40,
+            width: 40,
+            height: 40
         });
     }
     
