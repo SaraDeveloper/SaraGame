@@ -9,7 +9,7 @@ const player = {
     width: 40,
     height: 40,
     jumping: false,
-    jumpHeight: 15,
+    jumpHeight: 25,
     gravity: 0.6,
     velocity: 0
 };
@@ -163,9 +163,17 @@ function checkCollision(rect1, rect2) {
 
 // Handle keyboard input
 document.addEventListener('keydown', (event) => {
-    if (event.code === 'ArrowUp' && !player.jumping) {
+    if ((event.code === 'ArrowUp' || event.code === 'Space') && !player.jumping) {
         player.jumping = true;
         player.velocity = -player.jumpHeight;
+        event.preventDefault(); // Prevent page scrolling
+    }
+});
+
+// Add keyup event listener to allow for variable jump height
+document.addEventListener('keyup', (event) => {
+    if ((event.code === 'ArrowUp' || event.code === 'Space') && player.velocity < -8) {
+        player.velocity = -8; // Cut the jump short if key is released early
     }
 });
 
