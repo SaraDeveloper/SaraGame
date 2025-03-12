@@ -2,6 +2,42 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const restartBtn = document.getElementById('restart-btn');
 
+// Load cloud background
+const cloudBackground = new Image();
+cloudBackground.onload = () => {
+    console.log('Cloud background loaded successfully');
+    // Create initial clouds when image loads
+    createClouds();
+};
+cloudBackground.onerror = (e) => {
+    console.error('Error loading cloud background:', e);
+};
+cloudBackground.src = 'assets/cloud.webp';
+
+// Cloud array to store cloud positions
+let clouds = [];
+
+// Function to create clouds
+function createClouds() {
+    clouds = [];
+    // Create 5 clouds at random positions
+    for (let i = 0; i < 5; i++) {
+        const width = Math.random() * (400 - 200) + 200; // Random width between 200 and 800
+        const height = width * 0.6; // Maintain aspect ratio
+        
+        // Calculate y position ensuring bottom of cloud is above screen height/2
+        const maxY = (canvas.height / 2) - height; // Maximum y position to keep bottom above middle
+        const y = Math.random() * maxY; // Random y between 0 and maxY
+        
+        clouds.push({
+            x: Math.random() * canvas.width * 2,
+            y: y,
+            width: width,
+            height: height
+        });
+    }
+}
+
 // Game objects
 const player = {
     x: 70,
@@ -65,6 +101,26 @@ function gameLoop() {
     if (!gameOver) {
         // Clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw sky background
+        ctx.fillStyle = '#87CEEB'; // Light blue sky
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw clouds
+        if (cloudBackground.complete) {
+            clouds.forEach((cloud, index) => {
+                // Draw cloud with parallax effect
+                const screenX = cloud.x - camera.x * 0.5; // Clouds move at half speed of camera
+                
+                // Draw the cloud
+                ctx.drawImage(cloudBackground, screenX, cloud.y, cloud.width, cloud.height);
+                
+                // If cloud moves off screen to the left, move it to the right
+                if (screenX + cloud.width < 0) {
+                    cloud.x = camera.x + canvas.width + Math.random() * 200;
+                }
+            });
+        }
         
         // Handle level transition
         if (score >= level * 20 && countdown === 0) {
@@ -233,6 +289,7 @@ function restartGame() {
     countdown = 0;
     isMovingLeft = false;
     isMovingRight = false;
+    createClouds(); // Reset cloud positions
     gameLoop();
 }
 
