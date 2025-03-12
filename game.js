@@ -3,19 +3,35 @@ const ctx = canvas.getContext('2d');
 const restartBtn = document.getElementById('restart-btn');
 
 // Load rabbit sprites
-const rabbitSprites = [];
+const rabbitSprites = {
+    walking: [],
+    jumping: []
+};
+
+// Load walking sprites
 for (let i = 1; i <= 4; i++) {
     const sprite = new Image();
     sprite.src = `assets/rabbit_walking/${i}.png`;
-    sprite.onload = () => console.log(`Rabbit sprite ${i} loaded successfully`);
-    sprite.onerror = (e) => console.error(`Error loading rabbit sprite ${i}:`, e);
-    rabbitSprites.push(sprite);
+    sprite.onload = () => console.log(`Rabbit walking sprite ${i} loaded successfully`);
+    sprite.onerror = (e) => console.error(`Error loading rabbit walking sprite ${i}:`, e);
+    rabbitSprites.walking.push(sprite);
+}
+
+// Load jumping sprites
+for (let i = 1; i <= 13; i++) {
+    const sprite = new Image();
+    sprite.src = `assets/rabbit_jumping/${i}.png`;
+    sprite.onload = () => console.log(`Rabbit jumping sprite ${i} loaded successfully`);
+    sprite.onerror = (e) => console.error(`Error loading rabbit jumping sprite ${i}:`, e);
+    rabbitSprites.jumping.push(sprite);
 }
 
 // Animation frame counter
-let animationFrame = 0;
+let walkingFrame = 0;
+let jumpingFrame = 0;
 let lastFrameUpdate = 0;
-const FRAME_INTERVAL = 100; // Change frame every 100ms
+const WALK_FRAME_INTERVAL = 100; // Change walking frame every 100ms
+const JUMP_FRAME_INTERVAL = 50; // Change jumping frame faster (every 50ms)
 
 // Load cloud background
 const cloudBackground = new Image();
@@ -216,30 +232,52 @@ function gameLoop() {
         
         // Draw player relative to camera
         const currentTime = performance.now();
-        if (isMovingLeft || isMovingRight) {
-            // Update animation frame
-            if (currentTime - lastFrameUpdate > FRAME_INTERVAL) {
-                animationFrame = (animationFrame + 1) % 4;
+        
+        // Update animation frames
+        if (player.jumping) {
+            // Update jumping animation
+            if (currentTime - lastFrameUpdate > JUMP_FRAME_INTERVAL) {
+                // Calculate jumping frame based on vertical velocity
+                if (player.velocity < 0) {
+                    // Going up - first half of frames
+                    jumpingFrame = Math.min(Math.floor((player.jumpHeight + player.velocity) / player.jumpHeight * 6), 5);
+                } else {
+                    // Going down - second half of frames
+                    jumpingFrame = Math.min(Math.floor(6 + (player.velocity / player.jumpHeight * 6)), 12);
+                }
                 lastFrameUpdate = currentTime;
             }
-            // Update facing direction
+        } else if (isMovingLeft || isMovingRight) {
+            // Update walking animation
+            if (currentTime - lastFrameUpdate > WALK_FRAME_INTERVAL) {
+                walkingFrame = (walkingFrame + 1) % 4;
+                lastFrameUpdate = currentTime;
+            }
+        }
+        
+        // Update facing direction
+        if (isMovingLeft || isMovingRight) {
             player.facingLeft = isMovingLeft;
         }
 
         // Draw the rabbit sprite
-        if (rabbitSprites[animationFrame] && rabbitSprites[animationFrame].complete) {
+        const currentSprite = player.jumping ? 
+            rabbitSprites.jumping[jumpingFrame] : 
+            rabbitSprites.walking[walkingFrame];
+
+        if (currentSprite && currentSprite.complete) {
             ctx.save();
             if (player.facingLeft) {
                 // Flip the sprite horizontally when facing left
                 ctx.scale(-1, 1);
-                ctx.drawImage(rabbitSprites[animationFrame], 
+                ctx.drawImage(currentSprite, 
                     -(player.x - camera.x + player.width), // Adjust x position when flipped
                     player.y, 
                     player.width, 
                     player.height
                 );
             } else {
-                ctx.drawImage(rabbitSprites[animationFrame], 
+                ctx.drawImage(currentSprite, 
                     player.x - camera.x, 
                     player.y, 
                     player.width, 
