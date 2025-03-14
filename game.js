@@ -446,7 +446,7 @@ function gameLoop() {
             
             // Draw score and level
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-            ctx.fillRect(5, 5, 200, 130); // Made the box taller to accommodate hearts
+            ctx.fillRect(5, 5, 200, 100); // Return to original width for score box
             ctx.fillStyle = 'black';
             ctx.font = '24px Arial bold';
             ctx.textAlign = 'left';
@@ -454,16 +454,27 @@ function gameLoop() {
             ctx.fillText(`Level: ${level}`, 15, 65);
             ctx.fillText(`Mode: ${currentDifficulty}`, 15, 95);
 
-            // Draw hearts
-            const heartSize = 25;
-            const heartSpacing = 30;
-            const heartsStartX = 15;
-            const heartsY = 110;
+            // Draw hearts at the top center of the screen
+            const heartSize = 30; // Slightly larger hearts
+            const heartSpacing = 35;
+            const totalHeartsWidth = (heartSize + heartSpacing) * 5 - heartSpacing;
+            const heartsStartX = (canvas.width - totalHeartsWidth) / 2; // Center hearts horizontally
+            const heartsY = 15; // Position at the top with small margin
 
+            // Draw a semi-transparent background for hearts
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(heartsStartX - 10, 5, totalHeartsWidth + 20, heartSize + 20);
+
+            // Draw the hearts
             for (let i = 0; i < 5; i++) {
                 const image = i < player.lives ? heartImage : emptyHeartImage;
                 if (image.complete) {
-                    ctx.drawImage(image, heartsStartX + (i * heartSpacing), heartsY, heartSize, heartSize);
+                    ctx.drawImage(image, 
+                        heartsStartX + (i * (heartSize + heartSpacing)), 
+                        heartsY, 
+                        heartSize, 
+                        heartSize
+                    );
                 }
             }
 
