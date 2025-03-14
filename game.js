@@ -60,6 +60,17 @@ const rabbitSprites = {
     jumping: []
 };
 
+// Load heart images
+const heartImage = new Image();
+heartImage.onload = () => console.log('Heart image loaded successfully');
+heartImage.onerror = (e) => console.error('Error loading heart image:', e);
+heartImage.src = 'assets/lives/heart.png';
+
+const emptyHeartImage = new Image();
+emptyHeartImage.onload = () => console.log('Empty heart image loaded successfully');
+emptyHeartImage.onerror = (e) => console.error('Error loading empty heart image:', e);
+emptyHeartImage.src = 'assets/lives/empty_heart.png';
+
 // Load walking sprites
 for (let i = 1; i <= 4; i++) {
     const sprite = new Image();
@@ -152,7 +163,11 @@ const player = {
     maxJumps: 2,
     speed: 5,
     facingLeft: false,
-    deathTimer: 0
+    deathTimer: 0,
+    lives: 5,
+    isInvulnerable: false,
+    invulnerabilityTimer: 0,
+    invulnerabilityDuration: 1500 // 1.5 seconds of invulnerability after getting hit
 };
 
 // Add camera object
@@ -367,6 +382,14 @@ function gameLoop() {
             // Update and draw obstacles
             obstacles = obstacles.filter(obs => obs.x > camera.x - obs.width);
             
+            // Update invulnerability status
+            if (player.isInvulnerable) {
+                const currentTime = Date.now();
+                if (currentTime - player.invulnerabilityTimer >= player.invulnerabilityDuration) {
+                    player.isInvulnerable = false;
+                }
+            }
+
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 const obstacle = obstacles[i];
                 obstacle.x -= obstacle.speed;
@@ -384,9 +407,18 @@ function gameLoop() {
                     ctx.fillRect(obstacle.x - camera.x, obstacle.y, obstacle.width, obstacle.height);
                 }
                 
+                // Check collision and handle lives
                 if (checkCollision(player, obstacle)) {
-                    player.deathTimer = Date.now();
-                    gameOver = true;
+                    if (!player.isInvulnerable) {
+                        player.lives--;
+                        if (player.lives <= 0) {
+                            player.deathTimer = Date.now();
+                            gameOver = true;
+                        } else {
+                            player.isInvulnerable = true;
+                            player.invulnerabilityTimer = Date.now();
+                        }
+                    }
                 }
                 
                 if (!obstacle.passed && player.x > obstacle.x + obstacle.width) {
@@ -394,6 +426,17 @@ function gameLoop() {
                     score++;
                 }
             }
+
+            // Apply visual effect for invulnerability
+            if (player.isInvulnerable) {
+                const flashInterval = 150;
+                if (Math.floor((Date.now() - player.invulnerabilityTimer) / flashInterval) % 2 === 0) {
+                    ctx.globalAlpha = 0.5;
+                }
+            }
+            
+            // Reset globalAlpha after drawing everything
+            ctx.globalAlpha = 1.0;
             
             if (obstacles.length === 0 || 
                 obstacles[obstacles.length - 1].x < camera.x + canvas.width + 100) {
@@ -403,13 +446,26 @@ function gameLoop() {
             
             // Draw score and level
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-            ctx.fillRect(5, 5, 200, 100);
+            ctx.fillRect(5, 5, 200, 130); // Made the box taller to accommodate hearts
             ctx.fillStyle = 'black';
             ctx.font = '24px Arial bold';
             ctx.textAlign = 'left';
             ctx.fillText(`Score: ${score}`, 15, 35);
             ctx.fillText(`Level: ${level}`, 15, 65);
             ctx.fillText(`Mode: ${currentDifficulty}`, 15, 95);
+
+            // Draw hearts
+            const heartSize = 25;
+            const heartSpacing = 30;
+            const heartsStartX = 15;
+            const heartsY = 110;
+
+            for (let i = 0; i < 5; i++) {
+                const image = i < player.lives ? heartImage : emptyHeartImage;
+                if (image.complete) {
+                    ctx.drawImage(image, heartsStartX + (i * heartSpacing), heartsY, heartSize, heartSize);
+                }
+            }
 
             // Draw highest score at the bottom
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
@@ -499,6 +555,9 @@ function restartGame() {
     player.speed = settings.playerSpeed;
     player.jumpHeight = settings.jumpHeight;
     player.maxJumps = settings.maxJumps;
+    player.lives = 5;
+    player.isInvulnerable = false;
+    player.invulnerabilityTimer = 0;
     obstacles = [];
     gameOver = false;
     score = 0;
