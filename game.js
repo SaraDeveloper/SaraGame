@@ -6,6 +6,9 @@ const easyBtn = document.getElementById('easy-btn');
 const mediumBtn = document.getElementById('medium-btn');
 const hardBtn = document.getElementById('hard-btn');
 
+// Debug flag
+const DEBUG = false; // Set to true to see hitboxes and debug info
+
 // Difficulty settings
 const difficultySettings = {
     easy: {
@@ -118,25 +121,35 @@ cactusImage.onerror = (e) => {
 };
 cactusImage.src = 'assets/cactus.png';
 
+// Load carrot image
+const carrotImage = new Image();
+carrotImage.onload = () => {
+    console.log('Carrot image loaded successfully');
+};
+carrotImage.onerror = (e) => {
+    console.error('Error loading carrot image:', e);
+};
+carrotImage.src = 'assets/carrot.png';
+
 // Cloud array to store cloud positions
 let clouds = [];
+let carrots = [];
 let lastTimestamp = 0;
+let lastCarrotSpawn = 0;
+const CARROT_SPAWN_INTERVAL = 8000; // Spawn a carrot every 8 seconds (reduced from 15)
+const CARROT_SIZE = 50; // Increased size for better visibility
 
 // Function to create clouds
 function createClouds() {
     clouds = [];
     // Create 5 clouds at random positions
     for (let i = 0; i < 5; i++) {
-        const width = Math.random() * (400 - 200) + 200; // Random width between 200 and 400
-        const height = width * 0.6; // Maintain aspect ratio
-        
-        // Calculate y position ensuring bottom of cloud is above screen height/2
-        const maxY = (canvas.height / 2) - height; // Maximum y position to keep bottom above middle
-        const y = Math.random() * maxY; // Random y between 0 and maxY
-        
-        // Calculate speed based on size - smaller clouds move faster
-        const speedFactor = 1 - ((width - 200) / 200); // Will be 1 for smallest clouds, 0 for largest
-        const baseSpeed = 0.5 + (speedFactor * 1); // Base speed between 0.5 and 1.5 pixels per frame
+        const width = Math.random() * (400 - 200) + 200;
+        const height = width * 0.6;
+        const maxY = (canvas.height / 2) - height;
+        const y = Math.random() * maxY;
+        const speedFactor = 1 - ((width - 200) / 200);
+        const baseSpeed = 0.5 + (speedFactor * 1);
         
         clouds.push({
             x: Math.random() * canvas.width * 2,
@@ -209,6 +222,25 @@ function createObstacle() {
     const lastObstacle = obstacles[obstacles.length - 1];
     const randomGap = Math.random() * (maxGap - minGap) + minGap;
     
+    // Check if we should spawn a carrot
+    const currentTime = Date.now();
+    if (currentTime - lastCarrotSpawn >= CARROT_SPAWN_INTERVAL) {
+        // Position carrot ahead of the camera view
+        const carrotX = camera.x + canvas.width + (randomGap / 2);
+        // Random height between 150-180px from bottom (adjusted for better reachability)
+        const carrotY = canvas.height - (Math.random() * 30 + 150);
+        carrots.push({
+            x: carrotX,
+            y: carrotY,
+            width: CARROT_SIZE,
+            height: CARROT_SIZE,
+            collected: false,
+            speed: settings.obstacleSpeed
+        });
+        lastCarrotSpawn = currentTime;
+        console.log('Spawned carrot at:', carrotX, carrotY); // Debug log
+    }
+    
     // Randomly decide if we want to create multiple obstacles
     const numObstacles = Math.random() < (currentDifficulty === 'hard' ? 0.4 : 0.3) ? 2 : 1;
     const newObstacles = [];
@@ -249,7 +281,7 @@ function gameLoop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
         // Draw sky background
-        ctx.fillStyle = '#87CEEB'; // Light blue sky
+        ctx.fillStyle = '#87CEEB';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         // Draw clouds
@@ -295,9 +327,7 @@ function gameLoop() {
             ctx.fillText(`Level ${level}`, canvas.width / 2, canvas.height / 2 - 40);
             ctx.fillText(`Starting in: ${countdown}`, canvas.width / 2, canvas.height / 2 + 20);
         } else {
-            // Regular game updates when not in countdown
-            // Removed left/right movement code
-
+            // Regular game updates
             // Update camera position
             const playerScreenX = player.x - camera.x;
             let isCameraMoving = false;
@@ -325,7 +355,7 @@ function gameLoop() {
                 }
             }
 
-            // Draw player
+            // Draw player with animation
             const currentTime = performance.now();
             
             if (player.jumping) {
@@ -338,19 +368,13 @@ function gameLoop() {
                     lastFrameUpdate = currentTime;
                 }
             } else {
-                // Always play walking animation when not jumping
                 if (currentTime - lastFrameUpdate > WALK_FRAME_INTERVAL) {
                     walkingFrame = (walkingFrame + 1) % 4;
                     lastFrameUpdate = currentTime;
                 }
             }
-            
-            if (isMovingLeft) {
-                player.facingLeft = true;
-            } else if (isMovingRight || isCameraMoving) {
-                player.facingLeft = false;
-            }
 
+            // Draw the player sprite
             const currentSprite = player.jumping ? 
                 rabbitSprites.jumping[jumpingFrame] : 
                 rabbitSprites.walking[walkingFrame];
@@ -374,22 +398,55 @@ function gameLoop() {
                     );
                 }
                 ctx.restore();
-            } else {
-                ctx.fillStyle = 'black';
-                ctx.fillRect(player.x - camera.x, player.y, player.width, player.height);
             }
-            
+
+            // Update and draw carrots
+            carrots = carrots.filter(carrot => {
+                if (carrot.collected) return false;
+                if (carrot.x < camera.x - carrot.width) return false;
+                
+                // Update carrot position
+                carrot.x -= carrot.speed;
+                
+                // Draw carrot
+                if (carrotImage.complete) {
+                    ctx.save();
+                    ctx.drawImage(carrotImage, 
+                        carrot.x - camera.x, 
+                        carrot.y, 
+                        carrot.width, 
+                        carrot.height
+                    );
+                    ctx.restore();
+                    
+                    // Debug visualization of carrot hitbox
+                    if (DEBUG) {
+                        ctx.strokeStyle = 'red';
+                        ctx.strokeRect(
+                            carrot.x - camera.x, 
+                            carrot.y, 
+                            carrot.width, 
+                            carrot.height
+                        );
+                    }
+                }
+                
+                // Check if rabbit collected the carrot
+                if (checkCollision(player, carrot)) {
+                    if (player.lives < 5) {
+                        player.lives++;
+                        carrot.collected = true;
+                        console.log('Carrot collected! Lives:', player.lives); // Debug log
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+
             // Update and draw obstacles
             obstacles = obstacles.filter(obs => obs.x > camera.x - obs.width);
             
-            // Update invulnerability status
-            if (player.isInvulnerable) {
-                const currentTime = Date.now();
-                if (currentTime - player.invulnerabilityTimer >= player.invulnerabilityDuration) {
-                    player.isInvulnerable = false;
-                }
-            }
-
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 const obstacle = obstacles[i];
                 obstacle.x -= obstacle.speed;
@@ -401,13 +458,8 @@ function gameLoop() {
                         obstacle.width, 
                         obstacle.height
                     );
-                } else {
-                    // Fallback if image hasn't loaded
-                    ctx.fillStyle = 'green';
-                    ctx.fillRect(obstacle.x - camera.x, obstacle.y, obstacle.width, obstacle.height);
                 }
                 
-                // Check collision and handle lives
                 if (checkCollision(player, obstacle)) {
                     if (!player.isInvulnerable) {
                         player.lives--;
@@ -427,26 +479,33 @@ function gameLoop() {
                 }
             }
 
-            // Apply visual effect for invulnerability
+            // Handle invulnerability effect
             if (player.isInvulnerable) {
-                const flashInterval = 150;
-                if (Math.floor((Date.now() - player.invulnerabilityTimer) / flashInterval) % 2 === 0) {
-                    ctx.globalAlpha = 0.5;
+                const currentTime = Date.now();
+                if (currentTime - player.invulnerabilityTimer >= player.invulnerabilityDuration) {
+                    player.isInvulnerable = false;
+                } else {
+                    const flashInterval = 150;
+                    if (Math.floor((currentTime - player.invulnerabilityTimer) / flashInterval) % 2 === 0) {
+                        ctx.globalAlpha = 0.5;
+                    }
                 }
             }
-            
-            // Reset globalAlpha after drawing everything
+
+            // Reset globalAlpha
             ctx.globalAlpha = 1.0;
-            
+
+            // Create new obstacles if needed
             if (obstacles.length === 0 || 
                 obstacles[obstacles.length - 1].x < camera.x + canvas.width + 100) {
                 const newObstacles = createObstacle();
                 obstacles.push(...newObstacles);
             }
-            
-            // Draw score and level
+
+            // Draw UI elements
+            // Score box
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-            ctx.fillRect(5, 5, 200, 100); // Return to original width for score box
+            ctx.fillRect(5, 5, 200, 100);
             ctx.fillStyle = 'black';
             ctx.font = '24px Arial bold';
             ctx.textAlign = 'left';
@@ -454,21 +513,19 @@ function gameLoop() {
             ctx.fillText(`Level: ${level}`, 15, 65);
             ctx.fillText(`Mode: ${currentDifficulty}`, 15, 95);
 
-            // Draw hearts at the top center of the screen
-            const heartSize = 30; // Slightly larger hearts
+            // Hearts display
+            const heartSize = 30;
             const heartSpacing = 35;
             const totalHeartsWidth = (heartSize + heartSpacing) * 5 - heartSpacing;
-            const heartsStartX = (canvas.width - totalHeartsWidth) / 2; // Center hearts horizontally
-            const heartsY = 15; // Position at the top with small margin
+            const heartsStartX = (canvas.width - totalHeartsWidth) / 2;
+            const heartsY = 15;
 
-            // Draw a semi-transparent background for hearts
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             ctx.fillRect(heartsStartX - 10, 5, totalHeartsWidth + 20, heartSize + 20);
 
-            // Draw the hearts
             for (let i = 0; i < 5; i++) {
                 const image = i < player.lives ? heartImage : emptyHeartImage;
-                if (image.complete) {
+                if (image && image.complete) {
                     ctx.drawImage(image, 
                         heartsStartX + (i * (heartSize + heartSpacing)), 
                         heartsY, 
@@ -478,7 +535,7 @@ function gameLoop() {
                 }
             }
 
-            // Draw highest score at the bottom
+            // Highest score
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             ctx.fillRect(5, canvas.height - 40, 200, 35);
             ctx.fillStyle = 'black';
@@ -486,14 +543,12 @@ function gameLoop() {
             ctx.fillText(`Highest Score: ${highestScore}`, 15, canvas.height - 15);
         }
     } else {
-        // Only show game over screen after 1 second
+        // Game over screen
         const timeSinceDeath = Date.now() - player.deathTimer;
         
         if (timeSinceDeath >= 1000) {
-            // Update highest score when game is over
             updateHighestScore(score);
             
-            // Game over screen
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = 'white';
@@ -507,6 +562,7 @@ function gameLoop() {
             restartBtn.style.display = 'block';
         }
     }
+    
     animationFrameId = requestAnimationFrame(gameLoop);
 }
 
@@ -540,6 +596,21 @@ document.addEventListener('keyup', (event) => {
     }
 });
 
+// Function to spawn initial carrot
+function spawnInitialCarrot() {
+    const carrotX = camera.x + canvas.width / 2; // Place carrot in middle of screen
+    const carrotY = canvas.height - 180; // Adjusted height to be more reachable
+    carrots.push({
+        x: carrotX,
+        y: carrotY,
+        width: CARROT_SIZE,
+        height: CARROT_SIZE,
+        collected: false,
+        speed: difficultySettings[currentDifficulty].obstacleSpeed
+    });
+    console.log('Spawned initial carrot at:', carrotX, carrotY);
+}
+
 // Modify restartGame to reset camera
 function restartGame() {
     if (!currentDifficulty) {
@@ -570,6 +641,8 @@ function restartGame() {
     player.isInvulnerable = false;
     player.invulnerabilityTimer = 0;
     obstacles = [];
+    carrots = [];
+    lastCarrotSpawn = 0;
     gameOver = false;
     score = 0;
     level = 1;
@@ -577,6 +650,7 @@ function restartGame() {
     isMovingLeft = false;
     isMovingRight = false;
     createClouds(); // Reset cloud positions
+    spawnInitialCarrot(); // Spawn the initial carrot
     restartBtn.style.display = 'none'; // Hide the restart button
     gameLoop();
 }
