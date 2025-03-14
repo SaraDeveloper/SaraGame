@@ -41,16 +41,75 @@ function startGame(difficulty) {
     currentDifficulty = difficulty;
     menuContainer.style.display = 'none';
     canvas.style.display = 'block';
-    restartBtn.style.display = 'none';
     
-    // Apply difficulty settings
-    const settings = difficultySettings[difficulty];
-    player.speed = settings.playerSpeed;
-    player.jumpHeight = settings.jumpHeight;
-    player.maxJumps = settings.maxJumps;
-    
-    // Start the game
-    restartGame();
+    // Show tutorial box
+    const tutorialBox = document.createElement('div');
+    tutorialBox.id = 'tutorial-box';
+    tutorialBox.style.position = 'absolute';
+    tutorialBox.style.top = '50%';
+    tutorialBox.style.left = '50%';
+    tutorialBox.style.transform = 'translate(-50%, -50%)';
+    tutorialBox.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+    tutorialBox.style.padding = '20px';
+    tutorialBox.style.borderRadius = '10px';
+    tutorialBox.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.3)';
+    tutorialBox.style.zIndex = '1000';
+    tutorialBox.style.maxWidth = '400px';
+    tutorialBox.style.textAlign = 'center';
+
+    const title = document.createElement('h2');
+    title.textContent = 'How to Play';
+    title.style.marginBottom = '15px';
+    title.style.color = '#333';
+
+    const instructions = document.createElement('div');
+    instructions.innerHTML = `
+        <p style="margin-bottom: 10px;">🐰 Help the rabbit avoid the cactuses!</p>
+        <p style="margin-bottom: 10px;">⌨️ Press <strong>SPACE</strong> or <strong>UP ARROW</strong> to jump</p>
+        <p style="margin-bottom: 10px;">🥕 Collect carrots to gain extra lives</p>
+        <p style="margin-bottom: 10px;">❤️ You start with 5 lives</p>
+        <p style="margin-bottom: 15px;">🎯 Score points by passing obstacles</p>
+    `;
+    instructions.style.textAlign = 'left';
+    instructions.style.color = '#444';
+
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'Start Playing!';
+    closeButton.style.padding = '10px 20px';
+    closeButton.style.backgroundColor = '#4CAF50';
+    closeButton.style.color = 'white';
+    closeButton.style.border = 'none';
+    closeButton.style.borderRadius = '5px';
+    closeButton.style.cursor = 'pointer';
+    closeButton.style.fontSize = '16px';
+    closeButton.style.marginTop = '10px';
+
+    closeButton.addEventListener('mouseover', () => {
+        closeButton.style.backgroundColor = '#45a049';
+    });
+
+    closeButton.addEventListener('mouseout', () => {
+        closeButton.style.backgroundColor = '#4CAF50';
+    });
+
+    closeButton.addEventListener('click', () => {
+        tutorialBox.remove();
+        restartBtn.style.display = 'none';
+        
+        // Apply difficulty settings
+        const settings = difficultySettings[difficulty];
+        player.speed = settings.playerSpeed;
+        player.jumpHeight = settings.jumpHeight;
+        player.maxJumps = settings.maxJumps;
+        
+        // Start the game
+        restartGame();
+    });
+
+    tutorialBox.appendChild(title);
+    tutorialBox.appendChild(instructions);
+    tutorialBox.appendChild(closeButton);
+    document.body.appendChild(tutorialBox);
 }
 
 easyBtn.addEventListener('click', () => startGame('easy'));
