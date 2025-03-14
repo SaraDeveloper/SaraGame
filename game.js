@@ -239,7 +239,7 @@ const player = {
     lives: 5,
     isInvulnerable: false,
     invulnerabilityTimer: 0,
-    invulnerabilityDuration: 1500 // 1.5 seconds of invulnerability after getting hit
+    invulnerabilityDuration: 500 // Reduced to 0.5 seconds
 };
 
 // Add camera object
@@ -433,13 +433,26 @@ function gameLoop() {
                 }
             }
 
+            // Handle invulnerability effect BEFORE drawing the player
+            ctx.save(); // Save the context state
+            if (player.isInvulnerable) {
+                const currentTime = Date.now();
+                if (currentTime - player.invulnerabilityTimer >= player.invulnerabilityDuration) {
+                    player.isInvulnerable = false;
+                } else {
+                    const flashInterval = 100;
+                    if (Math.floor((currentTime - player.invulnerabilityTimer) / flashInterval) % 2 === 0) {
+                        ctx.globalAlpha = 0.0; // Completely invisible
+                    }
+                }
+            }
+
             // Draw the player sprite
             const currentSprite = player.jumping ? 
                 rabbitSprites.jumping[jumpingFrame] : 
                 rabbitSprites.walking[walkingFrame];
 
             if (currentSprite && currentSprite.complete) {
-                ctx.save();
                 if (player.facingLeft) {
                     ctx.scale(-1, 1);
                     ctx.drawImage(currentSprite, 
@@ -456,8 +469,8 @@ function gameLoop() {
                         player.height
                     );
                 }
-                ctx.restore();
             }
+            ctx.restore(); // Restore the context state after drawing player
 
             // Update and draw carrots
             carrots = carrots.filter(carrot => {
@@ -537,22 +550,6 @@ function gameLoop() {
                     score++;
                 }
             }
-
-            // Handle invulnerability effect
-            if (player.isInvulnerable) {
-                const currentTime = Date.now();
-                if (currentTime - player.invulnerabilityTimer >= player.invulnerabilityDuration) {
-                    player.isInvulnerable = false;
-                } else {
-                    const flashInterval = 150;
-                    if (Math.floor((currentTime - player.invulnerabilityTimer) / flashInterval) % 2 === 0) {
-                        ctx.globalAlpha = 0.5;
-                    }
-                }
-            }
-
-            // Reset globalAlpha
-            ctx.globalAlpha = 1.0;
 
             // Create new obstacles if needed
             if (obstacles.length === 0 || 
