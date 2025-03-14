@@ -136,8 +136,8 @@ let clouds = [];
 let carrots = [];
 let lastTimestamp = 0;
 let lastCarrotSpawn = 0;
-const CARROT_SPAWN_INTERVAL = 8000; // Spawn a carrot every 8 seconds (reduced from 15)
-const CARROT_SIZE = 50; // Increased size for better visibility
+const CARROT_SPAWN_INTERVAL = 15000; // Every 15 seconds
+const CARROT_SIZE = 50;
 
 // Function to create clouds
 function createClouds() {
@@ -227,8 +227,8 @@ function createObstacle() {
     if (currentTime - lastCarrotSpawn >= CARROT_SPAWN_INTERVAL) {
         // Position carrot ahead of the camera view
         const carrotX = camera.x + canvas.width + (randomGap / 2);
-        // Random height between 150-180px from bottom (adjusted for better reachability)
-        const carrotY = canvas.height - (Math.random() * 30 + 150);
+        // Random height between 250-300px from bottom (higher placement)
+        const carrotY = canvas.height - (Math.random() * 50 + 250);
         carrots.push({
             x: carrotX,
             y: carrotY,
@@ -238,7 +238,7 @@ function createObstacle() {
             speed: settings.obstacleSpeed
         });
         lastCarrotSpawn = currentTime;
-        console.log('Spawned carrot at:', carrotX, carrotY); // Debug log
+        console.log('Spawned carrot at:', carrotX, carrotY);
     }
     
     // Randomly decide if we want to create multiple obstacles
@@ -599,7 +599,7 @@ document.addEventListener('keyup', (event) => {
 // Function to spawn initial carrot
 function spawnInitialCarrot() {
     const carrotX = camera.x + canvas.width / 2; // Place carrot in middle of screen
-    const carrotY = canvas.height - 180; // Adjusted height to be more reachable
+    const carrotY = canvas.height - 250; // Higher placement for initial carrot
     carrots.push({
         x: carrotX,
         y: carrotY,
@@ -642,7 +642,7 @@ function restartGame() {
     player.invulnerabilityTimer = 0;
     obstacles = [];
     carrots = [];
-    lastCarrotSpawn = 0;
+    lastCarrotSpawn = Date.now(); // Reset spawn timer to current time
     gameOver = false;
     score = 0;
     level = 1;
@@ -650,7 +650,6 @@ function restartGame() {
     isMovingLeft = false;
     isMovingRight = false;
     createClouds(); // Reset cloud positions
-    spawnInitialCarrot(); // Spawn the initial carrot
     restartBtn.style.display = 'none'; // Hide the restart button
     gameLoop();
 }
