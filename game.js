@@ -94,16 +94,16 @@ function startGame(difficulty) {
 
     closeButton.addEventListener('click', () => {
         tutorialBox.remove();
-        restartBtn.style.display = 'none';
-        
-        // Apply difficulty settings
-        const settings = difficultySettings[difficulty];
-        player.speed = settings.playerSpeed;
-        player.jumpHeight = settings.jumpHeight;
-        player.maxJumps = settings.maxJumps;
-        
-        // Start the game
-        restartGame();
+    restartBtn.style.display = 'none';
+    
+    // Apply difficulty settings
+    const settings = difficultySettings[difficulty];
+    player.speed = settings.playerSpeed;
+    player.jumpHeight = settings.jumpHeight;
+    player.maxJumps = settings.maxJumps;
+    
+    // Start the game
+    restartGame();
     });
 
     tutorialBox.appendChild(title);
@@ -432,7 +432,7 @@ function gameLoop() {
                     lastFrameUpdate = currentTime;
                 }
             }
-
+            
             // Handle invulnerability effect BEFORE drawing the player
             ctx.save(); // Save the context state
             if (player.isInvulnerable) {
@@ -515,7 +515,7 @@ function gameLoop() {
                 
                 return true;
             });
-
+            
             // Update and draw obstacles
             obstacles = obstacles.filter(obs => obs.x > camera.x - obs.width);
             
@@ -536,8 +536,8 @@ function gameLoop() {
                     if (!player.isInvulnerable) {
                         player.lives--;
                         if (player.lives <= 0) {
-                            player.deathTimer = Date.now();
-                            gameOver = true;
+                    player.deathTimer = Date.now();
+                    gameOver = true;
                         } else {
                             player.isInvulnerable = true;
                             player.invulnerabilityTimer = Date.now();
@@ -550,14 +550,14 @@ function gameLoop() {
                     score++;
                 }
             }
-
+            
             // Create new obstacles if needed
             if (obstacles.length === 0 || 
                 obstacles[obstacles.length - 1].x < camera.x + canvas.width + 100) {
                 const newObstacles = createObstacle();
                 obstacles.push(...newObstacles);
             }
-
+            
             // Draw UI elements
             // Score box
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
