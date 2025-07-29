@@ -108,20 +108,22 @@ function startGame(difficulty) {
     // Show tutorial box
     const tutorialBox = document.createElement('div');
     tutorialBox.id = 'tutorial-box';
-    tutorialBox.style.position = 'absolute';
+    tutorialBox.style.position = 'fixed';
     tutorialBox.style.top = '50%';
     tutorialBox.style.left = '50%';
     tutorialBox.style.transform = 'translate(-50%, -50%)';
     tutorialBox.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
-    tutorialBox.style.padding = window.innerWidth <= 768 ? '15px' : '20px';
+    tutorialBox.style.padding = window.innerWidth <= 768 ? '20px' : '20px';
     tutorialBox.style.borderRadius = '10px';
     tutorialBox.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.3)';
-    tutorialBox.style.zIndex = '1000';
-    tutorialBox.style.maxWidth = window.innerWidth <= 768 ? '90vw' : '400px';
-    tutorialBox.style.width = window.innerWidth <= 768 ? '90vw' : '400px';
+    tutorialBox.style.zIndex = '10000';
+    tutorialBox.style.maxWidth = window.innerWidth <= 768 ? '85vw' : '400px';
+    tutorialBox.style.width = window.innerWidth <= 768 ? '85vw' : '400px';
     tutorialBox.style.textAlign = 'center';
     tutorialBox.style.touchAction = 'manipulation';
     tutorialBox.style.pointerEvents = 'auto';
+    tutorialBox.style.maxHeight = window.innerWidth <= 768 ? '80vh' : 'auto';
+    tutorialBox.style.overflow = 'auto';
 
     const title = document.createElement('h2');
     title.textContent = 'How to Play';
@@ -142,18 +144,20 @@ function startGame(difficulty) {
 
     const closeButton = document.createElement('button');
     closeButton.textContent = 'Start Playing!';
-    closeButton.style.padding = window.innerWidth <= 768 ? '12px 20px' : '10px 20px';
+    closeButton.style.padding = window.innerWidth <= 768 ? '15px 25px' : '10px 20px';
     closeButton.style.backgroundColor = '#4CAF50';
     closeButton.style.color = 'white';
     closeButton.style.border = 'none';
-    closeButton.style.borderRadius = '5px';
+    closeButton.style.borderRadius = '8px';
     closeButton.style.cursor = 'pointer';
-    closeButton.style.fontSize = window.innerWidth <= 768 ? '18px' : '16px';
-    closeButton.style.marginTop = '10px';
+    closeButton.style.fontSize = window.innerWidth <= 768 ? '20px' : '16px';
+    closeButton.style.marginTop = '15px';
     closeButton.style.width = window.innerWidth <= 768 ? '100%' : 'auto';
     closeButton.style.touchAction = 'manipulation';
     closeButton.style.pointerEvents = 'auto';
-    closeButton.style.minHeight = '44px'; // Minimum touch target size
+    closeButton.style.minHeight = '50px'; // Larger touch target
+    closeButton.style.fontWeight = 'bold';
+    closeButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
 
     closeButton.addEventListener('mouseover', () => {
         closeButton.style.backgroundColor = '#45a049';
@@ -204,6 +208,41 @@ function startGame(difficulty) {
     });
     
     document.body.appendChild(tutorialBox);
+    
+    // Add a fallback - tap anywhere to start (after 3 seconds)
+    setTimeout(() => {
+        const skipTutorial = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            closeTutorial();
+            document.removeEventListener('touchstart', skipTutorial);
+            document.removeEventListener('click', skipTutorial);
+        };
+        
+        document.addEventListener('touchstart', skipTutorial);
+        document.addEventListener('click', skipTutorial);
+        
+        // Show a hint after 3 seconds
+        setTimeout(() => {
+            if (tutorialBox.parentNode) {
+                const hint = document.createElement('div');
+                hint.textContent = 'Tap anywhere to start!';
+                hint.style.position = 'fixed';
+                hint.style.bottom = '20px';
+                hint.style.left = '50%';
+                hint.style.transform = 'translateX(-50%)';
+                hint.style.backgroundColor = 'rgba(0,0,0,0.8)';
+                hint.style.color = 'white';
+                hint.style.padding = '10px 20px';
+                hint.style.borderRadius = '20px';
+                hint.style.fontSize = '16px';
+                hint.style.zIndex = '10001';
+                document.body.appendChild(hint);
+                
+                setTimeout(() => hint.remove(), 3000);
+            }
+        }, 3000);
+    }, 1000);
 }
 
 easyBtn.addEventListener('click', () => startGame('easy'));
