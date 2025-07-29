@@ -5,6 +5,7 @@ const menuContainer = document.getElementById('menu-container');
 const easyBtn = document.getElementById('easy-btn');
 const mediumBtn = document.getElementById('medium-btn');
 const hardBtn = document.getElementById('hard-btn');
+const fitScreenBtn = document.getElementById('fit-screen-btn');
 
 // Responsive canvas sizing
 function resizeCanvas() {
@@ -13,23 +14,9 @@ function resizeCanvas() {
     
     if (isMobile) {
         if (isLandscape) {
-            // Mobile landscape: maintain aspect ratio and fit to screen
-            const targetAspectRatio = 2; // 1000/500 = 2:1 aspect ratio
-            const maxWidth = window.innerWidth - 20;
-            const maxHeight = window.innerHeight - 20;
-            
-            // Calculate dimensions that maintain aspect ratio
-            let gameWidth = maxWidth;
-            let gameHeight = gameWidth / targetAspectRatio;
-            
-            // If height is too tall, scale down based on height
-            if (gameHeight > maxHeight) {
-                gameHeight = maxHeight;
-                gameWidth = gameHeight * targetAspectRatio;
-            }
-            
-            canvas.width = gameWidth;
-            canvas.height = gameHeight;
+            // Mobile landscape: use most of the screen for better visibility
+            canvas.width = window.innerWidth - 10;
+            canvas.height = window.innerHeight - 10;
         } else {
             // Mobile portrait: use most of the width and reasonable height
             canvas.width = window.innerWidth - 10;
@@ -50,9 +37,9 @@ function resizeCanvas() {
 
 // Calculate responsive sizes based on canvas
 function getResponsiveSize(baseSize, canvasDimension) {
-    // Use the smaller scale to prevent oversized elements
-    const scale = Math.min(canvas.width / 1000, canvas.height / 500);
-    return Math.max(baseSize * scale, baseSize * 0.4); // Minimum 40% of original size
+    // Use the larger scale to make elements bigger on mobile
+    const scale = Math.max(canvas.width / 1000, canvas.height / 500);
+    return Math.max(baseSize * scale, baseSize * 0.8); // Minimum 80% of original size
 }
 
 // Initialize canvas size
@@ -116,6 +103,7 @@ function startGame(difficulty) {
     currentDifficulty = difficulty;
     menuContainer.style.display = 'none';
     canvas.style.display = 'block';
+    fitScreenBtn.style.display = 'block'; // Show fit screen button
     
     // Show tutorial box
     const tutorialBox = document.createElement('div');
@@ -309,8 +297,8 @@ const player = {
     width: getResponsiveSize(100, canvas.width),
     height: getResponsiveSize(100, canvas.height),
     jumping: false,
-    jumpHeight: 25,
-    gravity: 0.4,  // Reduced from 0.6 to make jumps longer
+    jumpHeight: 15, // Fixed reasonable jump height
+    gravity: 0.6,  // Increased gravity for better control
     velocity: 0,
     jumpCount: 0,
     maxJumps: 2,
@@ -394,9 +382,9 @@ function createObstacle() {
         // Random size calculation with larger ranges - made responsive
         const baseMinHeight = 80;  // Base minimum height
         const baseMaxHeight = 150; // Base maximum height
-        const scale = Math.min(canvas.width / 1000, canvas.height / 500);
-        const minHeight = Math.max(baseMinHeight * scale, baseMinHeight * 0.5);
-        const maxHeight = Math.max(baseMaxHeight * scale, baseMaxHeight * 0.5);
+        const scale = Math.max(canvas.width / 1000, canvas.height / 500);
+        const minHeight = Math.max(baseMinHeight * scale, baseMinHeight * 0.8);
+        const maxHeight = Math.max(baseMaxHeight * scale, baseMaxHeight * 0.8);
         const height = Math.random() * (maxHeight - minHeight) + minHeight;
         
         // More varied width calculation
@@ -648,7 +636,7 @@ function gameLoop() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             ctx.fillRect(5, 5, 200, 100);
             ctx.fillStyle = 'black';
-            const scoreFontSize = Math.max(16, Math.min(24, canvas.width / 40));
+            const scoreFontSize = Math.max(20, Math.min(32, canvas.width / 30));
             ctx.font = `${scoreFontSize}px Arial bold`;
             ctx.textAlign = 'left';
             ctx.fillText(`Score: ${score}`, 15, 35);
@@ -656,8 +644,8 @@ function gameLoop() {
             ctx.fillText(`Mode: ${currentDifficulty}`, 15, 95);
 
             // Hearts display
-            const heartSize = Math.max(20, Math.min(30, canvas.width / 30));
-            const heartSpacing = Math.max(25, Math.min(35, canvas.width / 25));
+            const heartSize = Math.max(30, Math.min(45, canvas.width / 25));
+            const heartSpacing = Math.max(35, Math.min(50, canvas.width / 20));
             const totalHeartsWidth = (heartSize + heartSpacing) * 5 - heartSpacing;
             const heartsStartX = (canvas.width - totalHeartsWidth) / 2;
             const heartsY = 15;
@@ -681,7 +669,7 @@ function gameLoop() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             ctx.fillRect(5, canvas.height - 40, 200, 35);
             ctx.fillStyle = 'black';
-            const highestScoreFontSize = Math.max(14, Math.min(20, canvas.width / 50));
+            const highestScoreFontSize = Math.max(18, Math.min(28, canvas.width / 35));
             ctx.font = `${highestScoreFontSize}px Arial`;
             ctx.fillText(`Highest Score: ${highestScore}`, 15, canvas.height - 15);
         }
@@ -882,6 +870,49 @@ function restartGame() {
 }
 
 restartBtn.addEventListener('click', restartGame);
+
+// Fit screen button functionality
+fitScreenBtn.addEventListener('click', () => {
+    const isMobile = window.innerWidth <= 768;
+    const isLandscape = window.innerWidth > window.innerHeight;
+    
+    if (isMobile && isLandscape) {
+        // Toggle between full screen and aspect ratio mode
+        if (canvas.width === window.innerWidth - 10) {
+            // Currently full screen, switch to aspect ratio
+            const targetAspectRatio = 2; // 1000/500 = 2:1 aspect ratio
+            const maxWidth = window.innerWidth - 20;
+            const maxHeight = window.innerHeight - 20;
+            
+            let gameWidth = maxWidth;
+            let gameHeight = gameWidth / targetAspectRatio;
+            
+            if (gameHeight > maxHeight) {
+                gameHeight = maxHeight;
+                gameWidth = gameHeight * targetAspectRatio;
+            }
+            
+            canvas.width = gameWidth;
+            canvas.height = gameHeight;
+            canvas.style.width = canvas.width + 'px';
+            canvas.style.height = canvas.height + 'px';
+            
+            // Update player size
+            player.width = getResponsiveSize(100, canvas.width);
+            player.height = getResponsiveSize(100, canvas.height);
+        } else {
+            // Currently aspect ratio, switch to full screen
+            canvas.width = window.innerWidth - 10;
+            canvas.height = window.innerHeight - 10;
+            canvas.style.width = canvas.width + 'px';
+            canvas.style.height = canvas.height + 'px';
+            
+            // Update player size
+            player.width = getResponsiveSize(100, canvas.width);
+            player.height = getResponsiveSize(100, canvas.height);
+        }
+    }
+});
 
 // Start the game
 restartGame(); 
