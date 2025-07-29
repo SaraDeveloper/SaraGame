@@ -415,7 +415,8 @@ function gameLoop() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = 'white';
-            ctx.font = '48px Arial';
+            const countdownFontSize = Math.max(24, Math.min(48, canvas.width / 20));
+            ctx.font = `${countdownFontSize}px Arial`;
             ctx.textAlign = 'center';
             ctx.fillText(`Level ${level}`, canvas.width / 2, canvas.height / 2 - 40);
             ctx.fillText(`Starting in: ${countdown}`, canvas.width / 2, canvas.height / 2 + 20);
@@ -597,15 +598,16 @@ function gameLoop() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             ctx.fillRect(5, 5, 200, 100);
             ctx.fillStyle = 'black';
-            ctx.font = '24px Arial bold';
+            const scoreFontSize = Math.max(16, Math.min(24, canvas.width / 40));
+            ctx.font = `${scoreFontSize}px Arial bold`;
             ctx.textAlign = 'left';
             ctx.fillText(`Score: ${score}`, 15, 35);
             ctx.fillText(`Level: ${level}`, 15, 65);
             ctx.fillText(`Mode: ${currentDifficulty}`, 15, 95);
 
             // Hearts display
-            const heartSize = 30;
-            const heartSpacing = 35;
+            const heartSize = Math.max(20, Math.min(30, canvas.width / 30));
+            const heartSpacing = Math.max(25, Math.min(35, canvas.width / 25));
             const totalHeartsWidth = (heartSize + heartSpacing) * 5 - heartSpacing;
             const heartsStartX = (canvas.width - totalHeartsWidth) / 2;
             const heartsY = 15;
@@ -629,7 +631,8 @@ function gameLoop() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             ctx.fillRect(5, canvas.height - 40, 200, 35);
             ctx.fillStyle = 'black';
-            ctx.font = '20px Arial';
+            const highestScoreFontSize = Math.max(14, Math.min(20, canvas.width / 50));
+            ctx.font = `${highestScoreFontSize}px Arial`;
             ctx.fillText(`Highest Score: ${highestScore}`, 15, canvas.height - 15);
         }
     } else {
@@ -642,10 +645,12 @@ function gameLoop() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = 'white';
-            ctx.font = '48px Arial';
+            const gameOverFontSize = Math.max(24, Math.min(48, canvas.width / 20));
+            ctx.font = `${gameOverFontSize}px Arial`;
             ctx.textAlign = 'center';
             ctx.fillText('Game Over!', canvas.width / 2, canvas.height / 2);
-            ctx.font = '24px Arial';
+            const gameOverScoreFontSize = Math.max(16, Math.min(24, canvas.width / 40));
+            ctx.font = `${gameOverScoreFontSize}px Arial`;
             ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 40);
             ctx.fillText(`Highest Score: ${highestScore}`, canvas.width / 2, canvas.height / 2 + 80);
             
