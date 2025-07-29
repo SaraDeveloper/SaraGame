@@ -14,27 +14,13 @@ function resizeCanvas() {
     
     if (isMobile) {
         if (isLandscape) {
-            // Mobile landscape: maintain aspect ratio and fit to screen
-            const targetAspectRatio = 2; // 1000/500 = 2:1 aspect ratio
-            const maxWidth = window.innerWidth - 20;
-            const maxHeight = window.innerHeight - 20;
-            
-            // Calculate dimensions that maintain aspect ratio
-            let gameWidth = maxWidth;
-            let gameHeight = gameWidth / targetAspectRatio;
-            
-            // If height is too tall, scale down based on height
-            if (gameHeight > maxHeight) {
-                gameHeight = maxHeight;
-                gameWidth = gameHeight * targetAspectRatio;
-            }
-            
-            canvas.width = gameWidth;
-            canvas.height = gameHeight;
+            // Mobile/tablet landscape: use full screen
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         } else {
-            // Mobile portrait: use most of the width and reasonable height
-            canvas.width = window.innerWidth - 10;
-            canvas.height = window.innerHeight * 0.8;
+            // Mobile portrait: use full screen
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
     } else {
         // Desktop: use original size or fit to container
