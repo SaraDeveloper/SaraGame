@@ -6,6 +6,37 @@ const easyBtn = document.getElementById('easy-btn');
 const mediumBtn = document.getElementById('medium-btn');
 const hardBtn = document.getElementById('hard-btn');
 
+// Responsive canvas sizing
+function resizeCanvas() {
+    const isMobile = window.innerWidth <= 768;
+    
+    if (isMobile) {
+        // Mobile: use viewport dimensions
+        canvas.width = window.innerWidth - 20; // Account for padding
+        canvas.height = window.innerHeight * 0.6; // 60% of viewport height
+    } else {
+        // Desktop: use original size or fit to container
+        const maxWidth = Math.min(1000, window.innerWidth - 40);
+        const maxHeight = Math.min(500, window.innerHeight * 0.7);
+        canvas.width = maxWidth;
+        canvas.height = maxHeight;
+    }
+    
+    // Update canvas CSS to match the new dimensions
+    canvas.style.width = canvas.width + 'px';
+    canvas.style.height = canvas.height + 'px';
+}
+
+// Initialize canvas size
+resizeCanvas();
+
+// Handle window resize
+window.addEventListener('resize', () => {
+    if (canvas.style.display !== 'none') {
+        resizeCanvas();
+    }
+});
+
 // Debug flag
 const DEBUG = false; // Set to true to see hitboxes and debug info
 
@@ -50,11 +81,12 @@ function startGame(difficulty) {
     tutorialBox.style.left = '50%';
     tutorialBox.style.transform = 'translate(-50%, -50%)';
     tutorialBox.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
-    tutorialBox.style.padding = '20px';
+    tutorialBox.style.padding = window.innerWidth <= 768 ? '15px' : '20px';
     tutorialBox.style.borderRadius = '10px';
     tutorialBox.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.3)';
     tutorialBox.style.zIndex = '1000';
-    tutorialBox.style.maxWidth = '400px';
+    tutorialBox.style.maxWidth = window.innerWidth <= 768 ? '90vw' : '400px';
+    tutorialBox.style.width = window.innerWidth <= 768 ? '90vw' : '400px';
     tutorialBox.style.textAlign = 'center';
 
     const title = document.createElement('h2');
@@ -66,6 +98,7 @@ function startGame(difficulty) {
     instructions.innerHTML = `
         <p style="margin-bottom: 10px;">🐰 Help the rabbit avoid the cactuses!</p>
         <p style="margin-bottom: 10px;">⌨️ Press <strong>SPACE</strong> or <strong>UP ARROW</strong> to jump</p>
+        <p style="margin-bottom: 10px;">📱 <strong>TAP</strong> the screen to jump on mobile devices</p>
         <p style="margin-bottom: 10px;">🥕 Collect carrots to gain extra lives</p>
         <p style="margin-bottom: 10px;">❤️ You start with 5 lives</p>
         <p style="margin-bottom: 15px;">🎯 Score points by passing obstacles</p>
@@ -75,14 +108,15 @@ function startGame(difficulty) {
 
     const closeButton = document.createElement('button');
     closeButton.textContent = 'Start Playing!';
-    closeButton.style.padding = '10px 20px';
+    closeButton.style.padding = window.innerWidth <= 768 ? '12px 20px' : '10px 20px';
     closeButton.style.backgroundColor = '#4CAF50';
     closeButton.style.color = 'white';
     closeButton.style.border = 'none';
     closeButton.style.borderRadius = '5px';
     closeButton.style.cursor = 'pointer';
-    closeButton.style.fontSize = '16px';
+    closeButton.style.fontSize = window.innerWidth <= 768 ? '18px' : '16px';
     closeButton.style.marginTop = '10px';
+    closeButton.style.width = window.innerWidth <= 768 ? '100%' : 'auto';
 
     closeButton.addEventListener('mouseover', () => {
         closeButton.style.backgroundColor = '#45a049';
@@ -651,6 +685,27 @@ document.addEventListener('keyup', (event) => {
         player.velocity = -8;
     }
 });
+
+// Handle touch input for mobile devices
+canvas.addEventListener('touchstart', (event) => {
+    event.preventDefault(); // Prevent default touch behavior
+    if (player.jumpCount < player.maxJumps) {
+        if (!player.jumping) {
+            player.jumping = true;
+            player.jumpCount = 1;
+        } else {
+            player.jumpCount++;
+        }
+        player.velocity = -player.jumpHeight;
+    }
+}, { passive: false });
+
+canvas.addEventListener('touchend', (event) => {
+    event.preventDefault(); // Prevent default touch behavior
+    if (player.velocity < -8) {
+        player.velocity = -8;
+    }
+}, { passive: false });
 
 // Function to spawn initial carrot
 function spawnInitialCarrot() {
