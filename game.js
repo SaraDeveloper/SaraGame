@@ -9,11 +9,18 @@ const hardBtn = document.getElementById('hard-btn');
 // Responsive canvas sizing
 function resizeCanvas() {
     const isMobile = window.innerWidth <= 768;
+    const isLandscape = window.innerWidth > window.innerHeight;
     
     if (isMobile) {
-        // Mobile: use viewport dimensions
-        canvas.width = window.innerWidth - 20; // Account for padding
-        canvas.height = window.innerHeight * 0.6; // 60% of viewport height
+        if (isLandscape) {
+            // Mobile landscape: use most of the screen
+            canvas.width = window.innerWidth - 10;
+            canvas.height = window.innerHeight - 10;
+        } else {
+            // Mobile portrait: use most of the width and reasonable height
+            canvas.width = window.innerWidth - 10;
+            canvas.height = window.innerHeight * 0.8;
+        }
     } else {
         // Desktop: use original size or fit to container
         const maxWidth = Math.min(1000, window.innerWidth - 40);
@@ -27,14 +34,36 @@ function resizeCanvas() {
     canvas.style.height = canvas.height + 'px';
 }
 
+// Calculate responsive sizes based on canvas
+function getResponsiveSize(baseSize, canvasDimension) {
+    const scale = Math.min(canvas.width / 1000, canvas.height / 500);
+    return Math.max(baseSize * scale, baseSize * 0.5); // Minimum 50% of original size
+}
+
 // Initialize canvas size
 resizeCanvas();
 
-// Handle window resize
+// Handle window resize and orientation change
 window.addEventListener('resize', () => {
     if (canvas.style.display !== 'none') {
         resizeCanvas();
+        // Update player size when canvas resizes
+        player.width = getResponsiveSize(100, canvas.width);
+        player.height = getResponsiveSize(100, canvas.height);
     }
+});
+
+// Handle orientation change specifically
+window.addEventListener('orientationchange', () => {
+    // Wait a bit for the orientation change to complete
+    setTimeout(() => {
+        if (canvas.style.display !== 'none') {
+            resizeCanvas();
+            // Update player size when canvas resizes
+            player.width = getResponsiveSize(100, canvas.width);
+            player.height = getResponsiveSize(100, canvas.height);
+        }
+    }, 100);
 });
 
 // Debug flag
@@ -230,7 +259,10 @@ let carrots = [];
 let lastTimestamp = 0;
 let lastCarrotSpawn = 0;
 const CARROT_SPAWN_INTERVAL = 15000; // Every 15 seconds
-const CARROT_SIZE = 50;
+// CARROT_SIZE will be calculated dynamically based on canvas size
+function getCarrotSize() {
+    return getResponsiveSize(50, canvas.width);
+}
 
 // Function to create clouds
 function createClouds() {
@@ -259,8 +291,8 @@ function createClouds() {
 const player = {
     x: 70,
     y: canvas.height - 100,
-    width: 100,
-    height: 100,
+    width: getResponsiveSize(100, canvas.width),
+    height: getResponsiveSize(100, canvas.height),
     jumping: false,
     jumpHeight: 25,
     gravity: 0.4,  // Reduced from 0.6 to make jumps longer
@@ -325,8 +357,8 @@ function createObstacle() {
         carrots.push({
             x: carrotX,
             y: carrotY,
-            width: CARROT_SIZE,
-            height: CARROT_SIZE,
+            width: getCarrotSize(),
+            height: getCarrotSize(),
             collected: false,
             speed: settings.obstacleSpeed
         });
@@ -344,9 +376,12 @@ function createObstacle() {
     }
     
     for (let i = 0; i < numObstacles; i++) {
-        // Random size calculation with larger ranges
-        const minHeight = 80;  // Increased minimum height
-        const maxHeight = 150; // Increased maximum height
+        // Random size calculation with larger ranges - made responsive
+        const baseMinHeight = 80;  // Base minimum height
+        const baseMaxHeight = 150; // Base maximum height
+        const scale = Math.min(canvas.width / 1000, canvas.height / 500);
+        const minHeight = Math.max(baseMinHeight * scale, baseMinHeight * 0.6);
+        const maxHeight = Math.max(baseMaxHeight * scale, baseMaxHeight * 0.6);
         const height = Math.random() * (maxHeight - minHeight) + minHeight;
         
         // More varied width calculation
@@ -719,8 +754,8 @@ function spawnInitialCarrot() {
     carrots.push({
         x: carrotX,
         y: carrotY,
-        width: CARROT_SIZE,
-        height: CARROT_SIZE,
+        width: getCarrotSize(),
+        height: getCarrotSize(),
         collected: false,
         speed: difficultySettings[currentDifficulty].obstacleSpeed
     });

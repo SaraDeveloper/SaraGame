@@ -85,6 +85,50 @@
                 max-width: 200px;
             }
         }
+        
+        /* Mobile landscape specific styles */
+        @media (max-width: 768px) and (orientation: landscape) {
+            body {
+                padding: 2px;
+                justify-content: center;
+                padding-top: 5px;
+            }
+            
+            canvas {
+                width: 100vw;
+                height: 100vh;
+                max-width: 100vw;
+                max-height: 100vh;
+                border-width: 1px;
+            }
+            
+            #menu-container {
+                width: 80%;
+                max-width: 600px;
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 28px;
+                margin-bottom: 15px;
+            }
+            
+            .difficulty-btn {
+                margin: 5px;
+                padding: 15px 25px;
+                font-size: 18px;
+                width: auto;
+                max-width: none;
+            }
+            
+            #restart-btn {
+                margin-top: 10px;
+                padding: 15px 25px;
+                font-size: 18px;
+                width: auto;
+                max-width: none;
+            }
+        }
         #restart-btn {
             margin-top: 20px;
             padding: 10px 20px;
