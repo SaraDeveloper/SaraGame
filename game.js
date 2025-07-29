@@ -13,9 +13,23 @@ function resizeCanvas() {
     
     if (isMobile) {
         if (isLandscape) {
-            // Mobile landscape: use most of the screen
-            canvas.width = window.innerWidth - 10;
-            canvas.height = window.innerHeight - 10;
+            // Mobile landscape: maintain aspect ratio and fit to screen
+            const targetAspectRatio = 2; // 1000/500 = 2:1 aspect ratio
+            const maxWidth = window.innerWidth - 20;
+            const maxHeight = window.innerHeight - 20;
+            
+            // Calculate dimensions that maintain aspect ratio
+            let gameWidth = maxWidth;
+            let gameHeight = gameWidth / targetAspectRatio;
+            
+            // If height is too tall, scale down based on height
+            if (gameHeight > maxHeight) {
+                gameHeight = maxHeight;
+                gameWidth = gameHeight * targetAspectRatio;
+            }
+            
+            canvas.width = gameWidth;
+            canvas.height = gameHeight;
         } else {
             // Mobile portrait: use most of the width and reasonable height
             canvas.width = window.innerWidth - 10;
@@ -36,8 +50,9 @@ function resizeCanvas() {
 
 // Calculate responsive sizes based on canvas
 function getResponsiveSize(baseSize, canvasDimension) {
+    // Use the smaller scale to prevent oversized elements
     const scale = Math.min(canvas.width / 1000, canvas.height / 500);
-    return Math.max(baseSize * scale, baseSize * 0.5); // Minimum 50% of original size
+    return Math.max(baseSize * scale, baseSize * 0.4); // Minimum 40% of original size
 }
 
 // Initialize canvas size
@@ -380,8 +395,8 @@ function createObstacle() {
         const baseMinHeight = 80;  // Base minimum height
         const baseMaxHeight = 150; // Base maximum height
         const scale = Math.min(canvas.width / 1000, canvas.height / 500);
-        const minHeight = Math.max(baseMinHeight * scale, baseMinHeight * 0.6);
-        const maxHeight = Math.max(baseMaxHeight * scale, baseMaxHeight * 0.6);
+        const minHeight = Math.max(baseMinHeight * scale, baseMinHeight * 0.5);
+        const maxHeight = Math.max(baseMaxHeight * scale, baseMaxHeight * 0.5);
         const height = Math.random() * (maxHeight - minHeight) + minHeight;
         
         // More varied width calculation
@@ -391,7 +406,7 @@ function createObstacle() {
         const width = height * widthRatio;
         
         newObstacles.push({
-            x: startX + (i * (width + 60)), // Increased spacing between obstacles
+            x: startX + (i * (width + 40)), // Reduced spacing for mobile
             y: canvas.height - height,
             width: width,
             height: height,
@@ -729,6 +744,10 @@ document.addEventListener('keyup', (event) => {
 // Handle touch input for mobile devices
 canvas.addEventListener('touchstart', (event) => {
     event.preventDefault(); // Prevent default touch behavior
+    event.stopPropagation(); // Stop event from bubbling up
+    
+    console.log('Touch detected!'); // Debug log
+    
     if (player.jumpCount < player.maxJumps) {
         if (!player.jumping) {
             player.jumping = true;
@@ -737,15 +756,72 @@ canvas.addEventListener('touchstart', (event) => {
             player.jumpCount++;
         }
         player.velocity = -player.jumpHeight;
+        console.log('Player jumped!'); // Debug log
     }
 }, { passive: false });
 
 canvas.addEventListener('touchend', (event) => {
     event.preventDefault(); // Prevent default touch behavior
+    event.stopPropagation(); // Stop event from bubbling up
+    
     if (player.velocity < -8) {
         player.velocity = -8;
     }
 }, { passive: false });
+
+// Also add touch events to the document as backup
+document.addEventListener('touchstart', (event) => {
+    // Only handle if the game is running and canvas is visible
+    if (canvas.style.display !== 'none' && !gameOver) {
+        event.preventDefault();
+        console.log('Document touch detected!'); // Debug log
+        
+        if (player.jumpCount < player.maxJumps) {
+            if (!player.jumping) {
+                player.jumping = true;
+                player.jumpCount = 1;
+            } else {
+                player.jumpCount++;
+            }
+            player.velocity = -player.jumpHeight;
+            console.log('Player jumped from document touch!'); // Debug log
+        }
+    }
+}, { passive: false });
+
+// Add click event as additional fallback
+canvas.addEventListener('click', (event) => {
+    console.log('Canvas clicked!'); // Debug log
+    if (player.jumpCount < player.maxJumps) {
+        if (!player.jumping) {
+            player.jumping = true;
+            player.jumpCount = 1;
+        } else {
+            player.jumpCount++;
+        }
+        player.velocity = -player.jumpHeight;
+        console.log('Player jumped from click!'); // Debug log
+    }
+});
+
+// Add click event to document as well
+document.addEventListener('click', (event) => {
+    // Only handle if the game is running and canvas is visible
+    if (canvas.style.display !== 'none' && !gameOver) {
+        console.log('Document clicked!'); // Debug log
+        
+        if (player.jumpCount < player.maxJumps) {
+            if (!player.jumping) {
+                player.jumping = true;
+                player.jumpCount = 1;
+            } else {
+                player.jumpCount++;
+            }
+            player.velocity = -player.jumpHeight;
+            console.log('Player jumped from document click!'); // Debug log
+        }
+    }
+});
 
 // Function to spawn initial carrot
 function spawnInitialCarrot() {
