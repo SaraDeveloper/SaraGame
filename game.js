@@ -120,6 +120,8 @@ function startGame(difficulty) {
     tutorialBox.style.maxWidth = window.innerWidth <= 768 ? '90vw' : '400px';
     tutorialBox.style.width = window.innerWidth <= 768 ? '90vw' : '400px';
     tutorialBox.style.textAlign = 'center';
+    tutorialBox.style.touchAction = 'manipulation';
+    tutorialBox.style.pointerEvents = 'auto';
 
     const title = document.createElement('h2');
     title.textContent = 'How to Play';
@@ -149,6 +151,9 @@ function startGame(difficulty) {
     closeButton.style.fontSize = window.innerWidth <= 768 ? '18px' : '16px';
     closeButton.style.marginTop = '10px';
     closeButton.style.width = window.innerWidth <= 768 ? '100%' : 'auto';
+    closeButton.style.touchAction = 'manipulation';
+    closeButton.style.pointerEvents = 'auto';
+    closeButton.style.minHeight = '44px'; // Minimum touch target size
 
     closeButton.addEventListener('mouseover', () => {
         closeButton.style.backgroundColor = '#45a049';
@@ -158,23 +163,46 @@ function startGame(difficulty) {
         closeButton.style.backgroundColor = '#4CAF50';
     });
 
-    closeButton.addEventListener('click', () => {
+    // Function to close tutorial and start game
+    const closeTutorial = () => {
         tutorialBox.remove();
-    restartBtn.style.display = 'none';
-    
-    // Apply difficulty settings
-    const settings = difficultySettings[difficulty];
-    player.speed = settings.playerSpeed;
-    player.jumpHeight = settings.jumpHeight;
-    player.maxJumps = settings.maxJumps;
-    
-    // Start the game
-    restartGame();
+        restartBtn.style.display = 'none';
+        
+        // Apply difficulty settings
+        const settings = difficultySettings[difficulty];
+        player.speed = settings.playerSpeed;
+        player.jumpHeight = settings.jumpHeight;
+        player.maxJumps = settings.maxJumps;
+        
+        // Start the game
+        restartGame();
+    };
+
+    // Add both click and touch events
+    closeButton.addEventListener('click', closeTutorial);
+    closeButton.addEventListener('touchstart', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        closeTutorial();
     });
 
     tutorialBox.appendChild(title);
     tutorialBox.appendChild(instructions);
     tutorialBox.appendChild(closeButton);
+    
+    // Add touch event to the entire tutorial box as fallback
+    tutorialBox.addEventListener('touchstart', (event) => {
+        // Only close if touching the button area
+        const rect = closeButton.getBoundingClientRect();
+        const touch = event.touches[0];
+        if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+            touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+            event.preventDefault();
+            event.stopPropagation();
+            closeTutorial();
+        }
+    });
+    
     document.body.appendChild(tutorialBox);
 }
 
